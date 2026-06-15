@@ -215,11 +215,22 @@
 
   <!-- Analysis Trigger -->
   <div class="analysis-bar">
-    <div>
+    <div style="flex: 1; min-width: 250px;">
       <strong>🤖 Run AI Analysis Now</strong>
-      <p>Sends a full analysis to your Telegram right away.</p>
+      <p>Sends a full analysis to Telegram right away.</p>
+      <div style="margin-top: 12px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+        <label for="f-chat-id" style="font-size: 12px; color: var(--muted); font-weight: 600;">TELEGRAM CHAT ID:</label>
+        <input id="f-chat-id" placeholder="Optional chat ID" style="padding: 6px 10px; font-size: 12px; max-width: 160px; height: 32px;" onchange="saveChatId()">
+        <a href="https://t.me/StockoAnalyzerBot" target="_blank" style="font-size: 11px; color: var(--accent2); text-decoration: none; font-weight: 500;">
+          💬 1. Start Bot
+        </a>
+        <span style="color: var(--muted); font-size: 11px;">|</span>
+        <a href="https://t.me/userinfobot" target="_blank" style="font-size: 11px; color: var(--accent2); text-decoration: none; font-weight: 500;">
+          🆔 2. Get ID
+        </a>
+      </div>
     </div>
-    <div class="analysis-btns">
+    <div class="analysis-btns" style="align-self: flex-end;">
       <button class="btn btn-ghost btn-sm" onclick="runAnalysis('morning')">🌅 Morning</button>
       <button class="btn btn-success btn-sm" onclick="runAnalysis('evening')">🌆 Evening</button>
     </div>
@@ -489,13 +500,22 @@ async function deleteStock(id, symbol) {
 // ── Run Analysis ──────────────────────────────────────────────────────
 async function runAnalysis(session) {
   if (!portfolio.length) { toast('Add some stocks first!', 'error'); return; }
+  const chat_id = document.getElementById('f-chat-id').value.trim();
   toast(`🚀 Starting ${session} analysis… check Telegram in ~30 seconds.`, 'info');
   try {
-    const res  = await fetch('/api/run-analysis', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({session}) });
+    const res  = await fetch('/api/run-analysis', { 
+      method: 'POST', 
+      headers: {'Content-Type':'application/json'}, 
+      body: JSON.stringify({ session, chat_id: chat_id || null }) 
+    });
     const data = await res.json();
     if (data.ok) toast(data.message, 'success');
     else toast('Error: ' + data.error, 'error');
   } catch(e) { toast('Failed to trigger analysis', 'error'); }
+}
+
+function saveChatId() {
+  localStorage.setItem('tg_chat_id', document.getElementById('f-chat-id').value.trim());
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────
@@ -515,6 +535,7 @@ document.addEventListener('keydown', e => {
 });
 
 // Init
+document.getElementById('f-chat-id').value = localStorage.getItem('tg_chat_id') || '';
 loadPortfolio();
 </script>
 </body>

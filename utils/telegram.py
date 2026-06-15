@@ -7,11 +7,15 @@ logger = logging.getLogger(__name__)
 TELEGRAM_API = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}"
 
 
-def send_telegram_message(text: str, parse_mode: str = "Markdown") -> bool:
+def send_telegram_message(text: str, parse_mode: str = "Markdown", chat_id: str = None) -> bool:
     """Send a text message to Telegram."""
+    target_chat = chat_id or TELEGRAM_CHAT_ID
+    if not target_chat:
+        logger.error("No Telegram Chat ID configured")
+        return False
     try:
         payload = {
-            "chat_id":    TELEGRAM_CHAT_ID,
+            "chat_id":    target_chat,
             "text":       text,
             "disable_web_page_preview": True,
         }
@@ -30,7 +34,7 @@ def send_telegram_message(text: str, parse_mode: str = "Markdown") -> bool:
             logger.error(f"Telegram error {response.status_code}: {response.text}")
             # Try sending without markdown if formatting failed
             if parse_mode == "Markdown":
-                return send_telegram_message(text, parse_mode=None)
+                return send_telegram_message(text, parse_mode=None, chat_id=target_chat)
             return False
 
     except Exception as e:
@@ -38,13 +42,16 @@ def send_telegram_message(text: str, parse_mode: str = "Markdown") -> bool:
         return False
 
 
-def send_telegram_photo(image_path: str, caption: str = "") -> bool:
+def send_telegram_photo(image_path: str, caption: str = "", chat_id: str = None) -> bool:
     """Send an image with optional caption."""
+    target_chat = chat_id or TELEGRAM_CHAT_ID
+    if not target_chat:
+        return False
     try:
         with open(image_path, "rb") as img:
             response = requests.post(
                 f"{TELEGRAM_API}/sendPhoto",
-                data={"chat_id": TELEGRAM_CHAT_ID, "caption": caption, "parse_mode": "Markdown"},
+                data={"chat_id": target_chat, "caption": caption, "parse_mode": "Markdown"},
                 files={"photo": img},
                 timeout=30
             )

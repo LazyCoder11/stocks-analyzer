@@ -241,7 +241,7 @@ def format_telegram_message(analysis: str, portfolio: list, session: str, model_
     return messages
 
 
-def run_analysis(session: str = "morning"):
+def run_analysis(session: str = "morning", chat_id: str = None):
     """Main analysis pipeline."""
     logger.info(f"🚀 Starting {session} analysis...")
 
@@ -285,7 +285,7 @@ def run_analysis(session: str = "morning"):
         messages = format_telegram_message(analysis, portfolio, session, model_used)
 
         for i, msg in enumerate(messages):
-            send_telegram_message(msg, parse_mode="Markdown")
+            send_telegram_message(msg, parse_mode="Markdown", chat_id=chat_id)
             logger.info(f"  ✅ Sent chunk {i+1}/{len(messages)}")
             if i < len(messages) - 1:
                 time.sleep(1)  # Avoid Telegram rate limits
@@ -296,7 +296,7 @@ def run_analysis(session: str = "morning"):
         error_msg = f"❌ *Stock Analyzer Error*\n\nSession: {session}\nError: `{str(e)}`\n\nCheck logs for details."
         logger.error(f"Analysis failed: {e}", exc_info=True)
         try:
-            send_telegram_message(error_msg, parse_mode="Markdown")
+            send_telegram_message(error_msg, parse_mode="Markdown", chat_id=chat_id)
         except:
             pass
         raise
