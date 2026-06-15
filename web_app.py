@@ -20,7 +20,9 @@ try:
 except ImportError:
     pass
 
-app = Flask(__name__, static_folder="static", static_url_path="")
+import os
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+app = Flask(__name__, static_folder=os.path.join(BASE_DIR, "static"), static_url_path="")
 
 from utils.db import db_load_portfolio as load_portfolio, db_save_portfolio as save_portfolio
 
@@ -29,7 +31,7 @@ from utils.db import db_load_portfolio as load_portfolio, db_save_portfolio as s
 
 @app.route("/")
 def index():
-    return send_from_directory("static", "index.html")
+    return app.send_static_file("index.html")
 
 
 # ─── Portfolio API ────────────────────────────────────────────────────────────
