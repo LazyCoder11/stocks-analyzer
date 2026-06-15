@@ -1,25 +1,25 @@
-# 📊 AI-Powered Stock Portfolio Analyzer & Dashboard
+# AI-Powered Stock Portfolio Analyzer & Dashboard
 
 A premium, production-ready stock portfolio management and automated market analysis system. It aggregates your holdings, fetches live market details, calculates advanced technical indicators, aggregates news feeds, and delivers a twice-daily custom AI market review directly to your Telegram.
 
-🔗 **Live Production Demo**: [https://stock-analyzer-app-t95f.onrender.com/](https://stock-analyzer-app-t95f.onrender.com/)
+**Live Production Demo**: [https://stock-analyzer-app-t95f.onrender.com/](https://stock-analyzer-app-t95f.onrender.com/)
 
 ---
 
-## ✨ Core Features
+## Core Features
 
-*   📈 **Premium SaaS Dashboard**: A beautiful, modern glassmorphic interface with real-time portfolio value, P&L status, and assets management.
-*   📊 **Dynamic Visualizations**: Integrated **Chart.js** to render live Sector Allocation doughnut charts and side-by-side Invested vs. Current Value performance bar charts.
-*   🤖 **AI-Powered Reports**: Morning Pre-Market reports (global indices, watchlist alerts, daily targets) and Evening Market Wrap-Ups (accumulation/profit-booking advice, news analysis).
-*   🔄 **Resilient AI Pipeline**: Uses OpenRouter to execute deep-level analysis with a smart, multi-model fallback chain:
+*   **Premium SaaS Dashboard**: A beautiful, modern glassmorphic interface with real-time portfolio value, P&L status, and assets management.
+*   **Dynamic Visualizations**: Integrated **Chart.js** to render live Sector Allocation doughnut charts and side-by-side Invested vs. Current Value performance bar charts.
+*   **AI-Powered Reports**: Morning Pre-Market reports (global indices, watchlist alerts, daily targets) and Evening Market Wrap-Ups (accumulation/profit-booking advice, news analysis).
+*   **Resilient AI Pipeline**: Uses OpenRouter to execute deep-level analysis with a smart, multi-model fallback chain:
     $$\text{Claude 3.5 Sonnet} \longrightarrow \text{GPT-4o} \longrightarrow \text{Gemini 1.5 Pro} \longrightarrow \text{Llama 3 405B}$$
-*   🗢 **Dual-Mode Persistence**: Automatically connects to a **PostgreSQL Database** in production (via Render) and falls back to a local `portfolio.json` file for offline development.
-*   🚀 **One-Click Deployments**: Configured with a `render.yaml` blueprint to easily provision a hosted database and a Gunicorn-powered web app.
-*   👥 **Public Demo Mode**: Visitors can input their custom Telegram Chat ID directly on the live dashboard to receive their customized portfolio reports on their phone.
+*   **Dual-Mode Persistence**: Automatically connects to a **PostgreSQL Database** in production (via Render) and falls back to a local `portfolio.json` file for offline development.
+*   **One-Click Deployments**: Configured with a `render.yaml` blueprint to easily provision a hosted database and a Gunicorn-powered web app.
+*   **Public Demo Mode**: Visitors can input their custom Telegram Chat ID directly on the live dashboard to receive their customized portfolio reports on their phone.
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```
                  [ Web Browser Dashboard ] 
@@ -45,7 +45,7 @@ A premium, production-ready stock portfolio management and automated market anal
 
 ---
 
-## ⚡ Quick Start (Local Setup)
+## Quick Start (Local Setup)
 
 ### 1. Install Dependencies
 ```bash
@@ -77,7 +77,7 @@ python analyzer.py evening   # Run evening market wrap-up analysis
 
 ---
 
-## 🌐 Deploying to Render.com (Free Database & Hosting)
+## Deploying to Render.com (Free Database & Hosting)
 
 This repository includes a `render.yaml` Blueprint file, which automatically configures a PostgreSQL database and a Flask web service together in one click:
 
@@ -94,7 +94,7 @@ To run reports automatically at 8:30 AM and 6:00 PM IST daily without paying for
 
 ---
 
-## ⚙️ Technologies Used
+## Technologies Used
 
 *   **Backend**: Python, Flask, Gunicorn
 *   **Frontend**: Vanilla HTML5, CSS Grid/Flexbox (Custom Glassmorphism styling), Vanilla JS
@@ -106,6 +106,6 @@ To run reports automatically at 8:30 AM and 6:00 PM IST daily without paying for
 
 ---
 
-## ⚠️ Disclaimer
+## Disclaimer
 
 This application is created for portfolio showcase and educational purposes only. The stock analysis and recommendations are AI-generated, based on historical indicators and news feed headlines, and **do not constitute financial advice**. Always do your own research before trading.
