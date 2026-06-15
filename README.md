@@ -1,163 +1,111 @@
-# 📊 Stock Portfolio Analyzer Bot
+# 📊 AI-Powered Stock Portfolio Analyzer & Dashboard
 
-Reads your portfolio from Google Sheets → Fetches latest NSE/BSE news → Deep AI analysis via OpenRouter → Sends to Telegram **twice daily**.
+A premium, production-ready stock portfolio management and automated market analysis system. It aggregates your holdings, fetches live market details, calculates advanced technical indicators, aggregates news feeds, and delivers a twice-daily custom AI market review directly to your Telegram.
+
+🔗 **Live Production Demo**: [https://stock-analyzer-app-t95f.onrender.com/](https://stock-analyzer-app-t95f.onrender.com/)
+
+---
+
+## ✨ Core Features
+
+*   📈 **Premium SaaS Dashboard**: A beautiful, modern glassmorphic interface with real-time portfolio value, P&L status, and assets management.
+*   📊 **Dynamic Visualizations**: Integrated **Chart.js** to render live Sector Allocation doughnut charts and side-by-side Invested vs. Current Value performance bar charts.
+*   🤖 **AI-Powered Reports**: Morning Pre-Market reports (global indices, watchlist alerts, daily targets) and Evening Market Wrap-Ups (accumulation/profit-booking advice, news analysis).
+*   🔄 **Resilient AI Pipeline**: Uses OpenRouter to execute deep-level analysis with a smart, multi-model fallback chain:
+    $$\text{Claude 3.5 Sonnet} \longrightarrow \text{GPT-4o} \longrightarrow \text{Gemini 1.5 Pro} \longrightarrow \text{Llama 3 405B}$$
+*   🗢 **Dual-Mode Persistence**: Automatically connects to a **PostgreSQL Database** in production (via Render) and falls back to a local `portfolio.json` file for offline development.
+*   🚀 **One-Click Deployments**: Configured with a `render.yaml` blueprint to easily provision a hosted database and a Gunicorn-powered web app.
+*   👥 **Public Demo Mode**: Visitors can input their custom Telegram Chat ID directly on the live dashboard to receive their customized portfolio reports on their phone.
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-Google Sheets (your portfolio)
-        ↓
-  Python Script
-        ↓
-Yahoo Finance API  →  Live prices + Technical indicators (RSI, MACD, MAs)
-Google News RSS    →  Latest news per stock
-Economic Times RSS →  Indian financial news
-        ↓
-  OpenRouter AI (Claude → GPT-4o → Gemini → Llama fallback)
-        ↓
-  Telegram Bot → You 📱
+                 [ Web Browser Dashboard ] 
+                            │
+                            ▼
+                     [ Flask Backend ] ◄──► [ PostgreSQL (Prod) / JSON (Local) ]
+                            │
+         ┌──────────────────┴──────────────────┐
+         ▼                                     ▼
+[ Yahoo Finance API ]                 [ Google News RSS Feed ]
+(Live prices & Technics:              (Historical / Stock-specific 
+ RSI, MACD, Moving Averages)           news correlations)
+         │                                     │
+         └──────────────────┬──────────────────┘
+                            ▼
+             [ OpenRouter AI Analysis ]
+             (Claude 4.5/3.5 → GPT-4o → Gemini)
+                            │
+                            ▼
+              [ Telegram Delivery System ]
+             (Delivered to your custom Chat ID)
 ```
 
 ---
 
-## ⚡ Quick Start
+## ⚡ Quick Start (Local Setup)
 
-### Step 1 — Install dependencies
+### 1. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-### Step 2 — Set up credentials (4 things needed)
-
-#### A. OpenRouter API Key
-1. Go to https://openrouter.ai → Sign up
-2. Dashboard → API Keys → Create key
-3. Add credits ($5 will last months for this use case)
-4. Paste key in `config/settings.py` → `OPENROUTER_API_KEY`
-
-#### B. Telegram Bot
-1. Open Telegram → search `@BotFather`
-2. Send `/newbot` → follow instructions → copy the token
-3. Paste in `config/settings.py` → `TELEGRAM_BOT_TOKEN`
-4. Start your new bot (search it and press Start)
-5. Get your Chat ID: visit `https://api.telegram.org/bot<YOUR_TOKEN>/getUpdates`
-   Look for `"chat":{"id": 123456789}` — that number is your Chat ID
-6. Paste in `config/settings.py` → `TELEGRAM_CHAT_ID`
-
-#### C. Google Sheets Setup
-1. Go to https://console.cloud.google.com
-2. Create a new project → Enable **Google Sheets API** and **Google Drive API**
-3. Go to IAM → Service Accounts → Create service account
-4. Create a JSON key → Download it → Save as `config/google_credentials.json`
-5. Copy the service account email (looks like: `xxx@xxx.iam.gserviceaccount.com`)
-6. Open your Google Sheet → Share → paste that email → Viewer access
-
-#### D. Google Sheet Format
-Create a sheet with these exact column headers in Row 1:
-
-| Symbol | Company Name | Quantity | Buy Price | Exchange | Sector |
-|--------|--------------|----------|-----------|----------|--------|
-| RELIANCE | Reliance Industries | 10 | 2450 | NSE | Energy |
-| TCS | Tata Consultancy Services | 5 | 3800 | NSE | IT |
-| HDFCBANK | HDFC Bank | 15 | 1650 | NSE | Banking |
-
-- **Symbol**: NSE/BSE ticker (e.g., RELIANCE, TCS, INFY)
-- **Exchange**: NSE or BSE
-- **Sector**: Optional but improves analysis
-
-Copy your Sheet ID from the URL:
-`https://docs.google.com/spreadsheets/d/`**`THIS_LONG_ID`**`/edit`
-
-Paste in `config/settings.py` → `GOOGLE_SHEETS_ID`
-
-### Step 3 — Test everything
+### 2. Configure Environment Variables
+Rename the template `.env.example` file to `.env` and fill in your parameters:
 ```bash
-python setup_and_test.py
+cp .env.example .env
 ```
-This tests all 6 connections and optionally sends a sample analysis to your Telegram.
+Inside your `.env` file:
+*   `OPENROUTER_API_KEY`: Your OpenRouter API key.
+*   `TELEGRAM_BOT_TOKEN`: Token from [@BotFather](https://t.me/BotFather).
+*   `TELEGRAM_CHAT_ID`: Your Telegram user ID (get via [@userinfobot](https://t.me/userinfobot)).
+*   `DATABASE_URL`: Leave blank to fallback to local JSON storage.
 
-### Step 4 — Run it!
-
-**Manual run (test):**
+### 3. Run the Web Dashboard
 ```bash
-python analyzer.py morning    # Morning analysis now
-python analyzer.py evening    # Evening analysis now
+python web_app.py
 ```
+Open [http://localhost:5000](http://localhost:5000) in your browser to start adding stocks!
 
-**Start the scheduler (runs automatically every day):**
+### 4. Trigger Analysis Manually
 ```bash
-python analyzer.py
+python analyzer.py morning   # Run morning pre-market analysis
+python analyzer.py evening   # Run evening market wrap-up analysis
 ```
-Runs at **8:30 AM IST** and **6:00 PM IST** daily.
 
 ---
 
-## 🤖 AI Model Fallback Chain
+## 🌐 Deploying to Render.com (Free Database & Hosting)
 
-The bot tries these models in order, automatically falling back if one is unavailable:
+This repository includes a `render.yaml` Blueprint file, which automatically configures a PostgreSQL database and a Flask web service together in one click:
 
-1. 🥇 `anthropic/claude-sonnet-4-5` — Best analysis quality
-2. 🥈 `openai/gpt-4o` — Strong fallback
-3. 🥉 `google/gemini-pro-1.5` — Good alternative
-4. 4️⃣  `meta-llama/llama-3.1-405b-instruct` — Last resort
+1. Push your code to a repository on **GitHub** (you can keep it Public since secrets are excluded).
+2. Log in to [Render.com](https://dashboard.render.com/) and go to **Blueprints**.
+3. Click **New Blueprint Instance** and connect your repository.
+4. Input your `OPENROUTER_API_KEY`, `TELEGRAM_BOT_TOKEN`, and `TELEGRAM_CHAT_ID` when prompted by the UI.
+5. Click **Apply**. Render will handle setting up the Postgres connection and Gunicorn server automatically!
 
-You'll see which model was used in each Telegram message.
-
----
-
-## 📱 What You'll Receive
-
-Each Telegram message includes:
-
-**🌅 Morning (8:30 AM) — Pre-Market Report:**
-- Global cues: US markets, SGX Nifty, crude oil, dollar index
-- Portfolio snapshot with live prices and P&L
-- Stock-by-stock analysis with BUY/SELL/HOLD recommendations
-- Price targets and stop-loss levels
-- Intraday alerts to watch
-
-**🌆 Evening (6:00 PM) — End-of-Day Report:**
-- Today's market summary and your portfolio performance
-- News impact assessment
-- What to watch tomorrow
-- Accumulation or profit-booking suggestions
-- Week-ahead outlook
+### Scheduling Daily Reports
+To run reports automatically at 8:30 AM and 6:00 PM IST daily without paying for Render's cron jobs, use [Cron-Job.org](https://cron-job.org/) to hit your Render app's analysis API:
+*   **Morning Trigger**: `POST https://YOUR_APP.onrender.com/api/run-analysis` with body `{"session": "morning"}`.
+*   **Evening Trigger**: `POST https://YOUR_APP.onrender.com/api/run-analysis` with body `{"session": "evening"}`.
 
 ---
 
-## ⏰ Running 24/7 (Keep-alive on free server)
+## ⚙️ Technologies Used
 
-### Option A — Local machine (simplest)
-Just keep the terminal open:
-```bash
-python analyzer.py
-```
-
-### Option B — Free cloud (PythonAnywhere)
-1. Sign up at https://www.pythonanywhere.com (free tier works)
-2. Upload all files
-3. Set up a scheduled task: `python /home/username/stock-analyzer/analyzer.py morning`
-   - Run at 08:30 IST
-   - Run at 18:00 IST
-
-### Option C — Railway / Render (free cloud)
-1. Push to GitHub (keep credentials in env variables, not code)
-2. Deploy to Railway.app or Render.com
-3. Use `start_command: python analyzer.py`
-
----
-
-## 🔧 Updating Your Portfolio
-
-Just update your Google Sheet — the bot reads fresh data every time it runs.
-No code changes needed!
+*   **Backend**: Python, Flask, Gunicorn
+*   **Frontend**: Vanilla HTML5, CSS Grid/Flexbox (Custom Glassmorphism styling), Vanilla JS
+*   **Charts**: Chart.js
+*   **Icons**: Lucide Icons
+*   **Market Data**: yfinance, pandas
+*   **Database**: PostgreSQL / psycopg2
+*   **AI Integration**: OpenRouter API
 
 ---
 
 ## ⚠️ Disclaimer
 
-This bot provides AI-generated analysis for informational purposes only.
-It is NOT financial advice. Always do your own research before investing.
-Past performance does not guarantee future results.
+This application is created for portfolio showcase and educational purposes only. The stock analysis and recommendations are AI-generated, based on historical indicators and news feed headlines, and **do not constitute financial advice**. Always do your own research before trading.
