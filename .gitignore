@@ -1,0 +1,11 @@
+.env
+logs/
+__pycache__/
+*.pyc
+*.pyo
+config/google_credentials.json
+data/
+venv/
+.venv/
+.vscode/
+
