@@ -142,19 +142,44 @@ def lookup_symbol(symbol):
     """Quick lookup — validate a symbol and return company name + live price."""
     exchange = request.args.get("exchange", "NSE").upper()
     yf_sym   = f"{symbol.upper()}.NS" if exchange == "NSE" else f"{symbol.upper()}.BO"
+    
+    # Default fallback values
+    name = symbol.upper()
+    live = 0.0
+    sector = "Other"
+    
     try:
         import yfinance as yf
         ticker = yf.Ticker(yf_sym)
-        fi = ticker.fast_info
-        info = ticker.info
-        live = round(fi.last_price or fi.previous_close or 0, 2)
-        name = info.get("longName") or info.get("shortName") or symbol.upper()
-        sector = info.get("sector", "")
+        
+        # 1. Try to get live price from fast_info (often works on cloud IPs)
+        try:
+            fi = ticker.fast_info
+            live = fi.last_price or fi.previous_close or 0
+        except Exception:
+            # Fallback to history close price
+            try:
+                hist = ticker.history(period="1d")
+                if not hist.empty:
+                    live = hist['Close'].iloc[-1]
+            except Exception:
+                pass
+
+        # 2. Try to get company name and sector from info (full scrape, often blocked on cloud IPs)
+        try:
+            info = ticker.info
+            if info:
+                name = info.get("longName") or info.get("shortName") or name
+                sector = info.get("sector") or sector
+        except Exception:
+            # Silently pass, we will use default symbol and "Other" sector
+            pass
+
         return jsonify({
             "valid":        True,
             "symbol":       symbol.upper(),
             "company_name": name,
-            "live_price":   live,
+            "live_price":   round(live, 2) if live else 0.0,
             "sector":       sector,
         })
     except Exception as e:
