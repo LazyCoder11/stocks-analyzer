@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { TrendingUp, Loader2 } from 'lucide-react';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -59,43 +60,26 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card glass-panel">
+    <div className="auth-wrap">
+      <div className="card auth-card">
         <div className="auth-logo">
-          <div className="auth-logo-badge">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="28"
-              height="28"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="18" y1="20" x2="18" y2="10"></line>
-              <line x1="12" y1="20" x2="12" y2="4"></line>
-              <line x1="6" y1="20" x2="6" y2="14"></line>
-            </svg>
+          <div className="auth-logo-icon">
+            <TrendingUp size={20} />
           </div>
-          <div>
-            <h1 className="auth-title">Stock Analyzer</h1>
-            <p className="auth-subtitle">Create Account</p>
-          </div>
+          <h1 className="auth-heading">Stock Analyzer</h1>
+          <p className="auth-sub">Create Account</p>
         </div>
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="auth-form">
           {error && (
             <div
               style={{
-                background: 'rgba(244, 63, 94, 0.15)',
-                color: 'var(--red)',
-                border: '1px solid rgba(244, 63, 94, 0.3)',
-                padding: '12px',
-                borderRadius: 'var(--radius-md)',
-                marginBottom: '20px',
-                fontSize: '13px',
+                background: 'var(--neon-red-dim)',
+                color: 'var(--neon-red)',
+                border: '1px solid rgba(255, 61, 90, 0.22)',
+                padding: '10px 12px',
+                borderRadius: 'var(--r-md)',
+                fontSize: '12px',
                 fontWeight: 600,
                 textAlign: 'center',
               }}
@@ -107,13 +91,12 @@ export default function RegisterPage() {
           {success && (
             <div
               style={{
-                background: 'rgba(16, 185, 129, 0.15)',
-                color: 'var(--green)',
-                border: '1px solid rgba(16, 185, 129, 0.3)',
-                padding: '12px',
-                borderRadius: 'var(--radius-md)',
-                marginBottom: '20px',
-                fontSize: '13px',
+                background: 'rgba(0, 255, 135, 0.08)',
+                color: 'var(--neon-green)',
+                border: '1px solid rgba(0, 255, 135, 0.18)',
+                padding: '10px 12px',
+                borderRadius: 'var(--r-md)',
+                fontSize: '12px',
                 fontWeight: 600,
                 textAlign: 'center',
               }}
@@ -122,11 +105,12 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <div className="form-group">
-            <label htmlFor="email">Email Address</label>
+          <div className="form-field">
+            <label className="form-label" htmlFor="email">Email Address</label>
             <input
               id="email"
               type="email"
+              className="form-input"
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -135,11 +119,12 @@ export default function RegisterPage() {
             />
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
+          <div className="form-field">
+            <label className="form-label" htmlFor="password">Password</label>
             <input
               id="password"
               type="password"
+              className="form-input"
               placeholder="Min. 6 characters"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -148,11 +133,12 @@ export default function RegisterPage() {
             />
           </div>
 
-          <div className="form-group" style={{ marginBottom: '24px' }}>
-            <label htmlFor="confirmPassword">Confirm Password</label>
+          <div className="form-field">
+            <label className="form-label" htmlFor="confirmPassword">Confirm Password</label>
             <input
               id="confirmPassword"
               type="password"
+              className="form-input"
               placeholder="Re-enter password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
@@ -161,31 +147,16 @@ export default function RegisterPage() {
             />
           </div>
 
-          <button type="submit" className="btn btn-primary" style={{ width: '100%' }} disabled={loading}>
+          <button
+            type="submit"
+            className="btn btn-neon btn-sm"
+            style={{ width: '100%', marginTop: '8px', padding: '10px' }}
+            disabled={loading}
+          >
             {loading ? (
               <>
-                <svg
-                  className="animate-spin"
-                  style={{ width: '16px', height: '16px', marginRight: '8px' }}
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    style={{ opacity: 0.25 }}
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    style={{ opacity: 0.75 }}
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Creating account...
+                <Loader2 className="animate-spin" size={14} />
+                <span>Creating Account...</span>
               </>
             ) : (
               'Create Account'
