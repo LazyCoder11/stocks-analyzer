@@ -94,7 +94,10 @@ export async function query<T = any>(sql: string, params: any[] = []): Promise<T
   const { conn, type } = await getDbConnection();
 
   if (type === 'postgres') {
-    const res = await (conn as Pool).query(sql, params);
+    // Replace %s with $1, $2, $3... for Postgres
+    let index = 1;
+    const pgSql = sql.replace(/%s/g, () => `$${index++}`);
+    const res = await (conn as Pool).query(pgSql, params);
     return res.rows;
   } else {
     // Replace %s with ? for SQLite
