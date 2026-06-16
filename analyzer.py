@@ -241,16 +241,26 @@ def format_telegram_message(analysis: str, portfolio: list, session: str, model_
     return messages
 
 
-def run_analysis(session: str = "morning", chat_id: str = None):
+def run_analysis(session: str = "morning", user_id: str = None, chat_id: str = None):
     """Main analysis pipeline."""
-    logger.info(f"🚀 Starting {session} analysis...")
+    logger.info(f"🚀 Starting {session} analysis for user {user_id}...")
 
     try:
-        # Step 1: Fetch portfolio from configured sources (Sheets / Angel One / Groww)
-        logger.info("📋 Fetching portfolio...")
-        portfolio = fetch_combined_portfolio()
+        if not chat_id and user_id:
+            from utils.db import db_get_user_by_id
+            user = db_get_user_by_id(user_id)
+            if user:
+                chat_id = user.get("telegram_chat_id")
+
+        if not chat_id:
+            chat_id = TELEGRAM_CHAT_ID  # Global fallback
+            logger.info(f"No custom chat ID found for user {user_id}, using default fallback: {chat_id}")
+
+        # Step 1: Fetch portfolio from configured sources (local / Sheets / Angel One / Groww)
+        logger.info(f"📋 Fetching portfolio for user {user_id}...")
+        portfolio = fetch_combined_portfolio(user_id)
         if not portfolio:
-            raise Exception("Portfolio is empty. Check your Google Sheet.")
+            raise Exception("Portfolio is empty. Add assets in the web dashboard first.")
         logger.info(f"✅ Loaded {len(portfolio)} stocks: {[s['symbol'] for s in portfolio]}")
 
         # Step 2: Enrich portfolio with live prices & technicals
@@ -286,15 +296,15 @@ def run_analysis(session: str = "morning", chat_id: str = None):
 
         for i, msg in enumerate(messages):
             send_telegram_message(msg, parse_mode="Markdown", chat_id=chat_id)
-            logger.info(f"  ✅ Sent chunk {i+1}/{len(messages)}")
+            logger.info(f"  ✅ Sent chunk {i+1}/{len(messages)} to chat ID {chat_id}")
             if i < len(messages) - 1:
                 time.sleep(1)  # Avoid Telegram rate limits
 
-        logger.info(f"🎉 {session.capitalize()} analysis complete! Sent {len(messages)} messages.")
+        logger.info(f"🎉 {session.capitalize()} analysis complete for user {user_id}! Sent {len(messages)} messages.")
 
     except Exception as e:
-        error_msg = f"❌ *Stock Analyzer Error*\n\nSession: {session}\nError: `{str(e)}`\n\nCheck logs for details."
-        logger.error(f"Analysis failed: {e}", exc_info=True)
+        error_msg = f"❌ *Stock Analyzer Error*\n\nSession: {session}\nUser ID: {user_id}\nError: `{str(e)}`\n\nCheck logs for details."
+        logger.error(f"Analysis failed for user {user_id}: {e}", exc_info=True)
         try:
             send_telegram_message(error_msg, parse_mode="Markdown", chat_id=chat_id)
         except:
@@ -303,7 +313,7 @@ def run_analysis(session: str = "morning", chat_id: str = None):
 
 
 def run_scheduler():
-    """Run the scheduler — triggers at 8:30 AM and 6:00 PM IST."""
+    """Run the scheduler — triggers at 8:30 AM and 6:00 PM IST for all users."""
     logger.info("⏰ Scheduler started. Waiting for 8:30 AM or 6:00 PM IST...")
     print("⏰ Scheduler running. Press Ctrl+C to stop.\n")
 
@@ -316,14 +326,28 @@ def run_scheduler():
 
         # Morning trigger: 8:30 AM IST
         if now.hour == MORNING_HOUR and now.minute >= 30 and last_morning_run != today:
-            print(f"\n🌅 [{now.strftime('%H:%M')}] Running MORNING analysis...")
-            run_analysis("morning")
+            print(f"\n🌅 [{now.strftime('%H:%M')}] Running MORNING analysis for all users...")
+            from utils.db import db_get_users_with_portfolios
+            users = db_get_users_with_portfolios()
+            print(f"Found {len(users)} users with configured portfolios and Telegram settings.")
+            for u in users:
+                try:
+                    run_analysis("morning", user_id=u["id"], chat_id=u["telegram_chat_id"])
+                except Exception as e:
+                    print(f"Error running morning analysis for {u['email']}: {e}")
             last_morning_run = today
 
         # Evening trigger: 6:00 PM IST
         elif now.hour == EVENING_HOUR and now.minute >= 0 and last_evening_run != today:
-            print(f"\n🌆 [{now.strftime('%H:%M')}] Running EVENING analysis...")
-            run_analysis("evening")
+            print(f"\n🌆 [{now.strftime('%H:%M')}] Running EVENING analysis for all users...")
+            from utils.db import db_get_users_with_portfolios
+            users = db_get_users_with_portfolios()
+            print(f"Found {len(users)} users with configured portfolios and Telegram settings.")
+            for u in users:
+                try:
+                    run_analysis("evening", user_id=u["id"], chat_id=u["telegram_chat_id"])
+                except Exception as e:
+                    print(f"Error running evening analysis for {u['email']}: {e}")
             last_evening_run = today
 
         time.sleep(60)  # Check every minute
@@ -332,10 +356,23 @@ def run_scheduler():
 if __name__ == "__main__":
     import sys
     if len(sys.argv) > 1:
-        # Manual trigger: python analyzer.py morning / evening / now
+        # Manual trigger: python analyzer.py morning / evening
         session = sys.argv[1] if sys.argv[1] in ["morning", "evening"] else "morning"
-        print(f"🔧 Manual trigger: {session} analysis")
-        run_analysis(session)
+        print(f"🔧 Manual trigger: {session} analysis for all users")
+        from utils.db import db_get_users_with_portfolios
+        users = db_get_users_with_portfolios()
+        if not users:
+            print("No users found with configured Telegram IDs in the database.")
+            # Try running with default settings
+            print("Running with default settings...")
+            run_analysis(session)
+        else:
+            print(f"Running analysis for {len(users)} users...")
+            for u in users:
+                try:
+                    run_analysis(session, user_id=u["id"], chat_id=u["telegram_chat_id"])
+                except Exception as e:
+                    print(f"Error for user {u['email']}: {e}")
     else:
         # Start scheduler
         run_scheduler()

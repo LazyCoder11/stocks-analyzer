@@ -191,13 +191,14 @@ def run_analysis_now():
     """Trigger the analyzer manually from the UI."""
     data = request.get_json() or {}
     session = data.get("session", "morning")
+    user_id = data.get("user_id")
     chat_id = data.get("chat_id")
     try:
         # Make sure analyzer uses local portfolio
         os.environ["PORTFOLIO_SOURCES"] = "local"
         from analyzer import run_analysis
         import threading
-        t = threading.Thread(target=run_analysis, args=(session, chat_id), daemon=True)
+        t = threading.Thread(target=run_analysis, args=(session, user_id, chat_id), daemon=True)
         t.start()
         return jsonify({"ok": True, "message": f"{session.capitalize()} analysis started — check Telegram!"})
     except Exception as e:

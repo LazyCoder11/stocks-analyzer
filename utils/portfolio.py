@@ -31,7 +31,7 @@ def _get_active_sources() -> list[str]:
     return [s.strip() for s in raw.split(",") if s.strip()]
 
 
-def fetch_combined_portfolio() -> list:
+def fetch_combined_portfolio(user_id: str = None) -> list:
     """
     Fetch and merge portfolio from all configured sources.
     Stocks with the same symbol are merged (quantities summed, buy price averaged).
@@ -44,7 +44,7 @@ def fetch_combined_portfolio() -> list:
     for source in sources:
         if source == "local":
             try:
-                stocks = _load_local_portfolio()
+                stocks = _load_local_portfolio(user_id)
                 logger.info(f"✅ Local (web UI): {len(stocks)} stocks")
                 all_stocks.extend(stocks)
             except Exception as e:
@@ -120,10 +120,12 @@ def _merge_portfolio(stocks: list) -> list:
     return result
 
 
-def _load_local_portfolio() -> list:
-    """Read portfolio from database or fallback to data/portfolio.json."""
+def _load_local_portfolio(user_id: str = None) -> list:
+    """Read portfolio from database for a user."""
     from utils.db import db_load_portfolio
-    data = db_load_portfolio()
+    if not user_id:
+        raise ValueError("User ID is required to load local portfolio.")
+    data = db_load_portfolio(user_id)
     if not data:
         raise ValueError("Portfolio is empty. Add stocks via the web dashboard.")
     return data
