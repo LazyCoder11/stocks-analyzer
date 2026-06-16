@@ -25,8 +25,7 @@ export const Header: React.FC<HeaderProps> = ({
           <TrendingUp size={16} />
         </div>
         <div>
-          <div className="brand-name">STOCK ANALYZER</div>
-          <div className="brand-sub">AI PORTFOLIO</div>
+          <div className="brand-name">STOCKO</div>
         </div>
       </div>
 
