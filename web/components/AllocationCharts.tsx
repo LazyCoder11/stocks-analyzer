@@ -1,6 +1,24 @@
 import React from 'react';
 import { Doughnut, Bar } from 'react-chartjs-2';
-import { PieChart, BarChart2 } from 'lucide-react';
+import { PieChart } from 'lucide-react';
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+} from 'chart.js';
+
+ChartJS.register(
+  ArcElement,
+  Tooltip,
+  Legend,
+  CategoryScale,
+  LinearScale,
+  BarElement
+);
 
 interface Stock {
   id: string;
