@@ -24,15 +24,16 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="brand-icon">
           <TrendingUp size={16} />
         </div>
-        <div>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="brand-name">STOCKO</div>
+          <div className="brand-sub">AI PORTFOLIO ANALYSIS</div>
         </div>
       </div>
 
       <div className="header-right">
         <div className="status-pill">
           <span className="status-dot" />
-          <span>LIVE</span>
+          <span>CONNECTED</span>
         </div>
 
         {user && (
@@ -46,7 +47,7 @@ export const Header: React.FC<HeaderProps> = ({
           className="btn-icon"
           onClick={onRefresh}
           disabled={loading}
-          title="Refresh Portfolio"
+          title="Refresh Portfolio Data"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
         </button>
@@ -54,16 +55,16 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           className="btn btn-neon btn-sm"
           onClick={onAddStock}
-          title="Add new holding"
+          title="Add New Stock Asset"
         >
           <Plus size={14} />
-          <span>Add</span>
+          <span>Add Asset</span>
         </button>
 
         <button
           className="btn-icon delete"
           onClick={onLogout}
-          title="Log Out"
+          title="Logout"
         >
           <LogOut size={14} />
         </button>

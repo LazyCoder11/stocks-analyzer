@@ -64,7 +64,7 @@ export const AllocationCharts: React.FC<AllocationChartsProps> = ({ portfolio })
   const sectorLabels = Object.keys(sectorMap);
   const sectorValues = Object.values(sectorMap);
 
-  // Sector percentages for the custom mobile progress bar
+  // Sector percentages for the custom progress bar
   const sectorAllocations = sectorLabels.map((label, idx) => {
     const val = sectorMap[label];
     const pct = totalVal ? (val / totalVal) * 100 : 0;
@@ -101,15 +101,15 @@ export const AllocationCharts: React.FC<AllocationChartsProps> = ({ portfolio })
       {
         label: 'Invested',
         data: investedVals,
-        backgroundColor: 'rgba(255, 255, 255, 0.08)',
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        borderWidth: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        borderColor: 'rgba(255, 255, 255, 0.15)',
+        borderWidth: 1.5,
         borderRadius: 4,
       },
       {
         label: 'Current',
         data: currentVals,
-        backgroundColor: 'rgba(0, 255, 135, 0.2)',
+        backgroundColor: 'rgba(0, 255, 135, 0.15)',
         borderColor: '#00ff87',
         borderWidth: 1.5,
         borderRadius: 4,
@@ -122,13 +122,13 @@ export const AllocationCharts: React.FC<AllocationChartsProps> = ({ portfolio })
       <div className="card-header">
         <div className="card-title">
           <PieChart size={14} className="empty-icon" />
-          <span>PORTFOLIO METRICS</span>
+          <span>Portfolio Analytics</span>
         </div>
       </div>
       <div className="card-inner">
-        {/* Custom Mobile-Friendly Allocation Bar */}
-        <div className="chart-label" style={{ marginBottom: '6px' }}>Sector Weighting</div>
-        <div className="alloc-bar">
+        {/* Custom Allocation Bar */}
+        <div className="chart-label" style={{ marginBottom: '8px' }}>Sector Weights</div>
+        <div className="alloc-bar" style={{ height: '6px' }}>
           {sectorAllocations.map((seg, idx) => (
             <div
               key={idx}
@@ -154,20 +154,18 @@ export const AllocationCharts: React.FC<AllocationChartsProps> = ({ portfolio })
         </div>
 
         {/* Charts Grid */}
-        <div className="charts-grid">
+        <div className="charts-grid" style={{ gap: '16px' }}>
           {/* Doughnut Chart */}
-          <div className="chart-box">
+          <div className="chart-box" style={{ height: '170px' }}>
             <div className="chart-label">Sector Split</div>
-            <div style={{ height: '150px', position: 'relative' }}>
+            <div style={{ height: '140px', position: 'relative' }}>
               <Doughnut
                 data={doughnutData}
                 options={{
                   responsive: true,
                   maintainAspectRatio: false,
                   plugins: {
-                    legend: {
-                      display: false, // Use our HTML legend above for cleaner mobile support
-                    },
+                    legend: { display: false },
                     tooltip: {
                       callbacks: {
                         label: (ctx) => {
@@ -184,9 +182,9 @@ export const AllocationCharts: React.FC<AllocationChartsProps> = ({ portfolio })
           </div>
 
           {/* Bar Chart */}
-          <div className="chart-box">
-            <div className="chart-label">Performance Comparison</div>
-            <div style={{ height: '150px', position: 'relative' }}>
+          <div className="chart-box" style={{ height: '170px' }}>
+            <div className="chart-label">Capital comparison</div>
+            <div style={{ height: '140px', position: 'relative' }}>
               <Bar
                 data={barData}
                 options={{
@@ -197,14 +195,14 @@ export const AllocationCharts: React.FC<AllocationChartsProps> = ({ portfolio })
                       grid: { display: false },
                       ticks: {
                         color: '#7a7a7a',
-                        font: { family: 'Space Grotesk', size: 9 },
+                        font: { family: 'Plus Jakarta Sans', size: 9, weight: 500 },
                       },
                     },
                     y: {
                       grid: { color: 'rgba(255,255,255,0.02)' },
                       ticks: {
                         color: '#7a7a7a',
-                        font: { family: 'Space Grotesk', size: 9 },
+                        font: { family: 'Plus Jakarta Sans', size: 9 },
                         callback: (v) => `₹${Number(v) >= 100000 ? (Number(v)/100000).toFixed(1) + 'L' : Number(v) >= 1000 ? (Number(v)/1000).toFixed(0) + 'k' : v}`,
                       },
                     },
@@ -217,7 +215,7 @@ export const AllocationCharts: React.FC<AllocationChartsProps> = ({ portfolio })
                         color: '#7a7a7a',
                         boxWidth: 8,
                         boxHeight: 8,
-                        font: { family: 'Space Grotesk', size: 9, weight: 'bold' },
+                        font: { family: 'Plus Jakarta Sans', size: 9, weight: 600 },
                       },
                     },
                   },

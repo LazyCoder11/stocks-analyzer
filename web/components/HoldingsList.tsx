@@ -65,9 +65,9 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
           </div>
         ) : portfolio.length === 0 ? (
           <div className="empty-state">
-            <HelpCircle size={40} className="empty-icon" />
+            <HelpCircle size={40} className="empty-icon" style={{ color: 'var(--neon-cyan)', opacity: 0.8 }} />
             <div className="empty-text">No active holdings found</div>
-            <div className="empty-sub" style={{ marginBottom: '12px' }}>
+            <div className="empty-sub" style={{ marginBottom: '16px' }}>
               Your portfolio is currently empty. Start by adding your first asset!
             </div>
             <button className="btn btn-neon btn-sm" onClick={onAddTrigger}>
@@ -81,25 +81,27 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
               <table className="holdings-table">
                 <thead>
                   <tr>
-                    <th>Stock / Company</th>
+                    <th style={{ paddingLeft: '16px' }}>Stock / Company</th>
                     <th>Sector</th>
-                    <th>Qty</th>
-                    <th>Buy Avg</th>
-                    <th>Live Price</th>
-                    <th>Returns</th>
-                    <th style={{ textAlign: 'right' }}>Actions</th>
+                    <th style={{ textAlign: 'right' }}>Qty</th>
+                    <th style={{ textAlign: 'right' }}>Avg Price</th>
+                    <th style={{ textAlign: 'right' }}>Live Price</th>
+                    <th style={{ textAlign: 'right' }}>Current Value</th>
+                    <th style={{ textAlign: 'right' }}>Total Returns</th>
+                    <th style={{ textAlign: 'right', paddingRight: '16px' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {portfolio.map((s) => {
                     const live = s.live_price || s.buy_price;
+                    const currentValue = live * s.quantity;
                     const pnl = s.pnl !== undefined ? s.pnl : (live - s.buy_price) * s.quantity;
                     const pnlPct = s.pnl_pct !== undefined ? s.pnl_pct : (s.buy_price ? ((live - s.buy_price) / s.buy_price) * 100 : 0);
                     const isUp = pnl >= 0;
 
                     return (
                       <tr key={s.id}>
-                        <td>
+                        <td style={{ paddingLeft: '16px' }}>
                           <div className="stock-sym">
                             {s.symbol}
                             <span className={`exchange-tag ${s.exchange}`}>{s.exchange}</span>
@@ -109,15 +111,27 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
                         <td>
                           <span className="sector-pill">{s.sector || 'Other'}</span>
                         </td>
-                        <td className="price-mono" style={{ fontWeight: 600 }}>{s.quantity}</td>
-                        <td className="price-mono" style={{ color: '#7a7a7a' }}>{fmtDec(s.buy_price)}</td>
-                        <td className="price-mono" style={{ fontWeight: 600 }}>{fmtDec(live)}</td>
-                        <td>
+                        <td className="price-mono" style={{ textAlign: 'right', fontWeight: 600 }}>
+                          {s.quantity}
+                        </td>
+                        <td className="price-mono" style={{ textAlign: 'right', color: '#7a7a7a' }}>
+                          {fmtDec(s.buy_price)}
+                        </td>
+                        <td className="price-mono" style={{ textAlign: 'right', fontWeight: 600 }}>
+                          {fmtDec(live)}
+                        </td>
+                        <td className="price-mono" style={{ textAlign: 'right', fontWeight: 700, color: 'var(--neon-cyan)' }}>
+                          {fmt(currentValue)}
+                        </td>
+                        <td style={{ textAlign: 'right' }}>
                           <span className={isUp ? 'pnl-up' : 'pnl-down'}>
-                            {isUp ? '▲' : '▼'} {pnlPct.toFixed(1)}% ({fmt(pnl)})
+                            {isUp ? '▲' : '▼'} {pnlPct.toFixed(1)}%
+                            <div style={{ fontSize: '9px', opacity: 0.8, fontFamily: 'JetBrains Mono, monospace' }}>
+                              {isUp ? '+' : ''}{fmt(pnl)}
+                            </div>
                           </span>
                         </td>
-                        <td>
+                        <td style={{ paddingRight: '16px' }}>
                           <div className="actions-group">
                             <button
                               className="btn-icon edit"
@@ -164,7 +178,9 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
                         <div className={isUp ? 'pnl-up' : 'pnl-down'}>
                           {isUp ? '▲' : '▼'} {pnlPct.toFixed(1)}%
                         </div>
-                        <div className="mobile-card-sub">{fmt(pnl)}</div>
+                        <div className="mobile-card-sub" style={{ color: isUp ? 'var(--neon-green)' : 'var(--neon-red)' }}>
+                          {isUp ? '+' : ''}{fmt(pnl)}
+                        </div>
                       </div>
                     </div>
 
@@ -273,7 +289,6 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
           }
           .mobile-card-sub {
             font-size: 11px;
-            color: var(--text-2);
             font-family: 'JetBrains Mono', monospace;
           }
           .mobile-card-details {

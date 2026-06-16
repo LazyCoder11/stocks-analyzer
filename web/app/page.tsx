@@ -348,27 +348,32 @@ export default function DashboardPage() {
           exchanges={exchanges}
         />
 
-        {/* Telegram Widget */}
-        <TelegramWidget
-          tgChatId={tgChatId}
-          setTgChatId={setTgChatId}
-          updatingTg={updatingTg}
-          runningAnalysis={runningAnalysis}
-          onSaveChatId={saveTgChatId}
-          onTriggerAnalysis={triggerAnalysis}
-        />
+        {/* Dashboard Grid (Ledger Left, Analytics/Actions Right) */}
+        <div className="dashboard-grid">
+          {/* Main Left Side: Portfolio Assets Ledger */}
+          <div className="dashboard-main-col">
+            <HoldingsList
+              portfolio={portfolio}
+              loading={loading}
+              onEdit={openModal}
+              onDelete={deleteStock}
+              onAddTrigger={() => openModal()}
+            />
+          </div>
 
-        {/* Allocations & Charts */}
-        <AllocationCharts portfolio={portfolio} />
-
-        {/* Portfolio Assets List */}
-        <HoldingsList
-          portfolio={portfolio}
-          loading={loading}
-          onEdit={openModal}
-          onDelete={deleteStock}
-          onAddTrigger={() => openModal()}
-        />
+          {/* Sidebar Right Side: Charts & Telegram Reporting */}
+          <aside className="dashboard-side-col">
+            <AllocationCharts portfolio={portfolio} />
+            <TelegramWidget
+              tgChatId={tgChatId}
+              setTgChatId={setTgChatId}
+              updatingTg={updatingTg}
+              runningAnalysis={runningAnalysis}
+              onSaveChatId={saveTgChatId}
+              onTriggerAnalysis={triggerAnalysis}
+            />
+          </aside>
+        </div>
       </main>
 
       {/* Stock Form Modal Bottom Sheet */}

@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700;800&family=JetBrains+Mono:wght=400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -91,7 +93,7 @@
   }
 
   .status-dot {
-    @apply w-1.5 h-1.5 rounded-full bg-neon-green shadow-[0_0_6px_rgba(0,255,135,1)] animate-pulse;
+    @apply w-1.5 h-1.5 rounded-full bg-neon-green shadow-neon-green-sm animate-pulse;
   }
 
   .user-chip {
@@ -112,11 +114,11 @@
   }
 
   .btn-neon {
-    @apply bg-neon-green/[0.1] text-neon-green border border-neon-green/[0.2] hover:bg-neon-green/[0.15] hover:border-neon-green/[0.35] hover:shadow-[0_0_16px_rgba(0,255,135,0.12)];
+    @apply bg-neon-green/[0.1] text-neon-green border border-neon-green/[0.2] hover:bg-neon-green/[0.15] hover:border-neon-green/[0.35] hover:shadow-neon-green-lg;
   }
 
   .btn-cyan {
-    @apply bg-neon-cyan/[0.1] text-neon-cyan border border-neon-cyan/[0.18] hover:bg-neon-cyan/[0.15] hover:border-neon-cyan/[0.32] hover:shadow-[0_0_16px_rgba(0,212,255,0.12)];
+    @apply bg-neon-cyan/[0.1] text-neon-cyan border border-neon-cyan/[0.18] hover:bg-neon-cyan/[0.15] hover:border-neon-cyan/[0.32] hover:shadow-neon-cyan-lg;
   }
 
   .btn-ghost {
@@ -145,20 +147,32 @@
 
   /* ─── LAYOUT ─────────────────────────────────────────── */
   .dashboard {
-    @apply flex-1 p-4 flex flex-col gap-3.5 mx-auto w-full mt-2;
+    @apply flex-1 p-4 sm:p-6 flex flex-col gap-6 mx-auto w-full max-w-[1240px] mt-2;
+  }
+
+  .dashboard-grid {
+    @apply grid grid-cols-1 lg:grid-cols-3 gap-6 items-start;
+  }
+
+  .dashboard-main-col {
+    @apply lg:col-span-2 flex flex-col gap-6;
+  }
+
+  .dashboard-side-col {
+    @apply flex flex-col gap-6;
   }
 
   /* ─── CARDS ─────────────────────────────────────────── */
   .card {
-    @apply bg-white/[0.03] border border-white/[0.07] rounded-2xl overflow-hidden transition-all duration-200 hover:border-white/[0.14];
+    @apply bg-[#0e0e11]/60 border border-white/[0.05] rounded-2xl overflow-hidden transition-all duration-200 hover:border-white/[0.1] shadow-xl backdrop-blur-md;
   }
 
   .card-inner {
-    @apply p-3.5;
+    @apply p-5;
   }
 
   .card-header {
-    @apply flex items-center justify-between p-3.5 border-b border-white/[0.07];
+    @apply flex items-center justify-between p-5 border-b border-white/[0.05];
   }
 
   .card-title {
@@ -191,7 +205,7 @@
   }
 
   .stat-card {
-    @apply p-3.5 rounded-2xl bg-white/[0.03] border border-white/[0.07] relative overflow-hidden transition-all duration-200 hover:border-white/[0.14];
+    @apply p-5 rounded-2xl bg-[#0e0e11]/60 border border-white/[0.05] relative overflow-hidden transition-all duration-200 hover:border-white/[0.1] shadow-lg backdrop-blur-md;
   }
 
   .stat-label {
@@ -244,7 +258,7 @@
   }
 
   .holdings-table th {
-    @apply px-3 py-2 text-left text-[9px] font-bold text-text-3 uppercase tracking-wider border-b border-white/[0.07] whitespace-nowrap;
+    @apply px-4 py-3 text-left text-[9px] font-bold text-text-3 uppercase tracking-widest border-b border-white/[0.05] whitespace-nowrap;
   }
 
   .holdings-table th:last-child {
@@ -252,11 +266,11 @@
   }
 
   .holdings-table td {
-    @apply px-3 py-2.5 border-b border-white/[0.07] text-xs align-middle;
+    @apply px-4 py-3.5 border-b border-white/[0.05] text-xs align-middle;
   }
 
   .holdings-table tbody tr {
-    @apply transition-colors duration-150 hover:bg-white/[0.055];
+    @apply transition-colors duration-150 hover:bg-white/[0.02];
   }
 
   .holdings-table tbody tr:last-child td {
@@ -383,7 +397,7 @@
   }
 
   .form-input {
-    @apply px-3 py-2 bg-white/[0.03] border border-white/[0.07] rounded-lg text-white font-sans text-xs outline-none w-full transition-all duration-200 focus:border-neon-green/[0.35] focus:bg-neon-green/[0.02] focus:shadow-[0_0_0_3px_rgba(0,255,135,0.05)];
+    @apply px-3 py-2 bg-white/[0.03] border border-white/[0.07] rounded-lg text-white font-sans text-xs outline-none w-full transition-all duration-200 focus:border-neon-green/[0.35] focus:bg-neon-green/[0.02] focus:shadow-neon-green-focus;
   }
 
   select.form-input option {
@@ -487,7 +501,7 @@
   }
 
   .auth-logo-icon {
-    @apply w-12 h-12 bg-neon-green/[0.1] border border-neon-green/[0.18] rounded-xl inline-flex items-center justify-center text-neon-green mb-3 shadow-[0_0_24px_rgba(0,255,135,0.08)];
+    @apply w-12 h-12 bg-neon-green/[0.1] border border-neon-green/[0.18] rounded-xl inline-flex items-center justify-center text-neon-green mb-3 shadow-neon-green-xl;
   }
 
   .auth-heading {

@@ -30,14 +30,14 @@ export const StatsSummary: React.FC<StatsSummaryProps> = ({
 
   return (
     <div className="stats-row">
-      {/* Total Invested */}
+      {/* Invested */}
       <div className="stat-card">
-        <div className="stat-label">Invested</div>
+        <div className="stat-label">Total Invested</div>
         <div className="stat-value">
           {loading ? '—' : fmt(totalInvested)}
         </div>
-        <div className="stat-sub">Committed capital</div>
-        <Wallet className="stat-icon" size={20} />
+        <div className="stat-sub">Principal capital cost</div>
+        <Wallet className="stat-icon" size={18} />
       </div>
 
       {/* Current Value */}
@@ -46,30 +46,32 @@ export const StatsSummary: React.FC<StatsSummaryProps> = ({
         <div className="stat-value cyan">
           {loading ? '—' : fmt(totalCurrent)}
         </div>
-        <div className="stat-sub">Live valuation</div>
-        <LineChart className="stat-icon" size={20} />
+        <div className="stat-sub">Live market valuation</div>
+        <LineChart className="stat-icon" size={18} />
       </div>
 
-      {/* P&L */}
+      {/* Net Return */}
       <div className="stat-card">
-        <div className="stat-label">Net Return</div>
+        <div className="stat-label">Net Returns</div>
         <div className={`stat-value ${isUp ? 'green' : 'red'}`}>
           {loading ? '—' : `${isUp ? '+' : ''}${fmt(totalPnL)}`}
         </div>
         <div className={`stat-badge ${isUp ? 'up' : 'down'}`}>
           {loading ? '—' : `${isUp ? '▲' : '▼'} ${totalPnLPct.toFixed(2)}%`}
         </div>
-        <TrendingUp className="stat-icon" size={20} />
+        <TrendingUp className="stat-icon" size={18} />
       </div>
 
       {/* Assets Count */}
       <div className="stat-card">
-        <div className="stat-label">Assets</div>
+        <div className="stat-label">Active Assets</div>
         <div className="stat-value">
           {loading ? '—' : `${assetsCount}`}
         </div>
-        <div className="stat-sub">{loading ? '—' : exchanges || 'No active holdings'}</div>
-        <Layers className="stat-icon" size={20} />
+        <div className="stat-sub">
+          {loading ? '—' : assetsCount === 0 ? 'No active holdings' : `Listed on ${exchanges || 'Exchanges'}`}
+        </div>
+        <Layers className="stat-icon" size={18} />
       </div>
     </div>
   );

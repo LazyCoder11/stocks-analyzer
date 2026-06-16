@@ -16,8 +16,15 @@ module.exports = {
         'text-3': '#444444',
       },
       fontFamily: {
-        sans: ['Space Grotesk', 'sans-serif'],
+        sans: ['Plus Jakarta Sans', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
+      },
+      boxShadow: {
+        'neon-green-sm': '0 0 6px #00ff87',
+        'neon-green-lg': '0 0 16px rgba(0, 255, 135, 0.12)',
+        'neon-cyan-lg': '0 0 16px rgba(0, 212, 255, 0.12)',
+        'neon-green-xl': '0 0 24px rgba(0, 255, 135, 0.08)',
+        'neon-green-focus': '0 0 0 3px rgba(0, 255, 135, 0.05)',
       },
     },
   },

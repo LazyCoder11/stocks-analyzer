@@ -1,5 +1,5 @@
 import React from 'react';
-import { Send, Sunrise, Sunset, Loader2 } from 'lucide-react';
+import { Send, Sunrise, Sunset, Loader2, ArrowRight } from 'lucide-react';
 
 interface TelegramWidgetProps {
   tgChatId: string;
@@ -23,42 +23,44 @@ export const TelegramWidget: React.FC<TelegramWidgetProps> = ({
       <div className="card-header">
         <div className="card-title">
           <Send size={14} className="empty-icon" />
-          <span>TELEGRAM REPORTS</span>
+          <span>AI Telegram Reports</span>
         </div>
       </div>
       <div className="card-inner">
+        {/* Setup Guide */}
         <div className="tg-steps">
           <div className="tg-step">
             <div className="tg-num">1</div>
             <div className="tg-step-body">
-              <div className="tg-step-label">Start Bot Chat</div>
+              <div className="tg-step-label">Connect to AI Bot</div>
               <a
                 href="https://t.me/StockoAnalyzerBot"
                 target="_blank"
                 rel="noreferrer"
                 className="tg-step-link"
               >
-                @StockoAnalyzerBot →
+                Start @StockoAnalyzerBot <ArrowRight size={10} style={{ display: 'inline-block' }} />
               </a>
             </div>
           </div>
           <div className="tg-step">
             <div className="tg-num">2</div>
             <div className="tg-step-body">
-              <div className="tg-step-label">Find Your Chat ID</div>
+              <div className="tg-step-label">Get Chat ID</div>
               <a
                 href="https://t.me/userinfobot"
                 target="_blank"
                 rel="noreferrer"
                 className="tg-step-link"
               >
-                @userinfobot →
+                Send message to @userinfobot <ArrowRight size={10} style={{ display: 'inline-block' }} />
               </a>
             </div>
           </div>
         </div>
 
-        <div className="form-field" style={{ marginBottom: '16px' }}>
+        {/* Input binding */}
+        <div className="form-field" style={{ marginBottom: '18px' }}>
           <label className="form-label" htmlFor="tg-chat-id">
             Telegram Chat ID
           </label>
@@ -67,7 +69,7 @@ export const TelegramWidget: React.FC<TelegramWidgetProps> = ({
               id="tg-chat-id"
               type="text"
               className="form-input"
-              placeholder="e.g. 987654321"
+              placeholder="Enter your numeric Chat ID (e.g. 98765432)"
               value={tgChatId}
               onChange={(e) => setTgChatId(e.target.value)}
               disabled={updatingTg}
@@ -76,38 +78,58 @@ export const TelegramWidget: React.FC<TelegramWidgetProps> = ({
               className="btn btn-cyan btn-sm"
               onClick={onSaveChatId}
               disabled={updatingTg || !tgChatId.trim()}
+              style={{ padding: '0 16px', height: '34px' }}
             >
               {updatingTg ? 'Saving...' : 'Save'}
             </button>
           </div>
         </div>
 
-        <div className="analysis-btns">
-          <button
-            className="btn btn-ghost btn-sm"
-            onClick={() => onTriggerAnalysis('morning')}
-            disabled={runningAnalysis !== null}
-          >
-            {runningAnalysis === 'morning' ? (
-              <Loader2 className="animate-spin" size={14} />
-            ) : (
-              <Sunrise size={14} />
-            )}
-            <span>Morning Run</span>
-          </button>
+        {/* Analysis Description & Buttons */}
+        <div style={{ borderTop: '1px solid border-white/[0.07]', paddingTop: '14px', marginTop: '12px' }}>
+          <div className="form-label" style={{ marginBottom: '8px' }}>Trigger Manual Updates</div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: '#f0f0f0' }}>Morning Pre-Open</div>
+                <div style={{ fontSize: '10px', color: '#7a7a7a' }}>Analysis on global market indicators.</div>
+              </div>
+              <button
+                className="btn btn-ghost btn-sm"
+                onClick={() => onTriggerAnalysis('morning')}
+                disabled={runningAnalysis !== null}
+                style={{ minWidth: '110px' }}
+              >
+                {runningAnalysis === 'morning' ? (
+                  <Loader2 className="animate-spin" size={12} />
+                ) : (
+                  <Sunrise size={12} />
+                )}
+                <span style={{ marginLeft: '4px' }}>Morning Run</span>
+              </button>
+            </div>
 
-          <button
-            className="btn btn-neon btn-sm"
-            onClick={() => onTriggerAnalysis('evening')}
-            disabled={runningAnalysis !== null}
-          >
-            {runningAnalysis === 'evening' ? (
-              <Loader2 className="animate-spin" size={14} />
-            ) : (
-              <Sunset size={14} />
-            )}
-            <span>Evening Run</span>
-          </button>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: '12px', fontWeight: 600, color: '#f0f0f0' }}>Evening Closing</div>
+                <div style={{ fontSize: '10px', color: '#7a7a7a' }}>Post-close technical summary report.</div>
+              </div>
+              <button
+                className="btn btn-neon btn-sm"
+                onClick={() => onTriggerAnalysis('evening')}
+                disabled={runningAnalysis !== null}
+                style={{ minWidth: '110px' }}
+              >
+                {runningAnalysis === 'evening' ? (
+                  <Loader2 className="animate-spin" size={12} />
+                ) : (
+                  <Sunset size={12} />
+                )}
+                <span style={{ marginLeft: '4px' }}>Evening Run</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
