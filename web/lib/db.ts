@@ -1,6 +1,5 @@
 import { Pool } from 'pg';
-import sqlite3 from 'sqlite3';
-import { open, Database } from 'sqlite';
+import type { Database } from 'sqlite';
 import path from 'path';
 
 let postgresPool: Pool | null = null;
@@ -51,10 +50,13 @@ export async function getDbConnection() {
     return { conn: postgresPool, type: 'postgres' as const };
   } else {
     if (!sqliteDb) {
+      const sqlite3Module = await import('sqlite3');
+      const { open } = await import('sqlite');
+
       const dbPath = path.resolve(process.cwd(), '../data/stock_analyzer.db');
       sqliteDb = await open({
         filename: dbPath,
-        driver: sqlite3.Database,
+        driver: sqlite3Module.default.Database,
       });
       // Enable foreign keys
       await sqliteDb.run('PRAGMA foreign_keys = ON;');
