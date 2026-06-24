@@ -22,7 +22,7 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="app-header">
       <div className="header-brand">
         <div className="brand-icon">
-          <TrendingUp size={16} />
+          <TrendingUp size={18} />
         </div>
         <div style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="brand-name">STOCKO</div>
@@ -49,7 +49,7 @@ export const Header: React.FC<HeaderProps> = ({
           disabled={loading}
           title="Refresh Portfolio Data"
         >
-          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          <RefreshCw size={14} className={loading ? 'animate-spin text-emerald-400' : 'text-slate-400'} />
         </button>
 
         <button

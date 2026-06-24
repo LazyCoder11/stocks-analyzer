@@ -52,7 +52,7 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
     <div className="card accent-line-green">
       <div className="card-header">
         <div className="card-title">
-          <Briefcase size={14} className="empty-icon" />
+          <Briefcase size={14} className="text-emerald-400" />
           <span>PORTFOLIO ASSETS ({portfolio.length})</span>
         </div>
       </div>
@@ -60,12 +60,12 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
       <div className="card-inner" style={{ padding: '0' }}>
         {loading ? (
           <div className="loading-row">
-            <Loader2 className="animate-spin" size={16} />
+            <Loader2 className="animate-spin text-emerald-400" size={16} />
             <span>Syncing live market data...</span>
           </div>
         ) : portfolio.length === 0 ? (
           <div className="empty-state">
-            <HelpCircle size={40} className="empty-icon" style={{ color: 'var(--neon-cyan)', opacity: 0.8 }} />
+            <HelpCircle size={40} className="text-cyan-400 animate-pulse" style={{ opacity: 0.8 }} />
             <div className="empty-text">No active holdings found</div>
             <div className="empty-sub" style={{ marginBottom: '16px' }}>
               Your portfolio is currently empty. Start by adding your first asset!
@@ -81,14 +81,14 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
               <table className="holdings-table">
                 <thead>
                   <tr>
-                    <th style={{ paddingLeft: '16px' }}>Stock / Company</th>
+                    <th style={{ paddingLeft: '20px' }}>Stock / Company</th>
                     <th>Sector</th>
                     <th style={{ textAlign: 'right' }}>Qty</th>
                     <th style={{ textAlign: 'right' }}>Avg Price</th>
                     <th style={{ textAlign: 'right' }}>Live Price</th>
                     <th style={{ textAlign: 'right' }}>Current Value</th>
                     <th style={{ textAlign: 'right' }}>Total Returns</th>
-                    <th style={{ textAlign: 'right', paddingRight: '16px' }}>Actions</th>
+                    <th style={{ textAlign: 'right', paddingRight: '20px' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -98,10 +98,13 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
                     const pnl = s.pnl !== undefined ? s.pnl : (live - s.buy_price) * s.quantity;
                     const pnlPct = s.pnl_pct !== undefined ? s.pnl_pct : (s.buy_price ? ((live - s.buy_price) / s.buy_price) * 100 : 0);
                     const isUp = pnl >= 0;
+                    
+                    // Generate clean sector class for badge styling
+                    const sectorClass = s.sector ? s.sector.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-') : 'other';
 
                     return (
-                      <tr key={s.id}>
-                        <td style={{ paddingLeft: '16px' }}>
+                      <tr key={s.id} className={isUp ? 'row-pnl-up' : 'row-pnl-down'}>
+                        <td style={{ paddingLeft: '20px' }}>
                           <div className="stock-sym">
                             {s.symbol}
                             <span className={`exchange-tag ${s.exchange}`}>{s.exchange}</span>
@@ -109,29 +112,29 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
                           <div className="stock-name" title={s.company_name}>{s.company_name}</div>
                         </td>
                         <td>
-                          <span className="sector-pill">{s.sector || 'Other'}</span>
+                          <span className={`sector-pill ${sectorClass}`}>{s.sector || 'Other'}</span>
                         </td>
-                        <td className="price-mono" style={{ textAlign: 'right', fontWeight: 600 }}>
+                        <td className="price-mono text-white" style={{ textAlign: 'right', fontWeight: 600 }}>
                           {s.quantity}
                         </td>
-                        <td className="price-mono" style={{ textAlign: 'right', color: '#7a7a7a' }}>
+                        <td className="price-mono text-slate-500" style={{ textAlign: 'right' }}>
                           {fmtDec(s.buy_price)}
                         </td>
-                        <td className="price-mono" style={{ textAlign: 'right', fontWeight: 600 }}>
+                        <td className="price-mono text-slate-200" style={{ textAlign: 'right', fontWeight: 600 }}>
                           {fmtDec(live)}
                         </td>
-                        <td className="price-mono" style={{ textAlign: 'right', fontWeight: 700, color: 'var(--neon-cyan)' }}>
+                        <td className="price-mono text-cyan-400" style={{ textAlign: 'right', fontWeight: 700 }}>
                           {fmt(currentValue)}
                         </td>
                         <td style={{ textAlign: 'right' }}>
                           <span className={isUp ? 'pnl-up' : 'pnl-down'}>
                             {isUp ? '▲' : '▼'} {pnlPct.toFixed(1)}%
-                            <div style={{ fontSize: '9px', opacity: 0.8, fontFamily: 'JetBrains Mono, monospace' }}>
+                            <div style={{ fontSize: '10px', opacity: 0.9, fontFamily: 'JetBrains Mono, monospace', marginTop: '1px' }}>
                               {isUp ? '+' : ''}{fmt(pnl)}
                             </div>
                           </span>
                         </td>
-                        <td style={{ paddingRight: '16px' }}>
+                        <td style={{ paddingRight: '20px' }}>
                           <div className="actions-group">
                             <button
                               className="btn-icon edit"
@@ -163,6 +166,7 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
                 const pnl = s.pnl !== undefined ? s.pnl : (live - s.buy_price) * s.quantity;
                 const pnlPct = s.pnl_pct !== undefined ? s.pnl_pct : (s.buy_price ? ((live - s.buy_price) / s.buy_price) * 100 : 0);
                 const isUp = pnl >= 0;
+                const sectorClass = s.sector ? s.sector.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-') : 'other';
 
                 return (
                   <div key={s.id} className="mobile-stock-card">
@@ -178,7 +182,7 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
                         <div className={isUp ? 'pnl-up' : 'pnl-down'}>
                           {isUp ? '▲' : '▼'} {pnlPct.toFixed(1)}%
                         </div>
-                        <div className="mobile-card-sub" style={{ color: isUp ? 'var(--neon-green)' : 'var(--neon-red)' }}>
+                        <div className="mobile-card-sub" style={{ color: isUp ? 'var(--neon-green)' : 'var(--neon-red)', fontWeight: 600 }}>
                           {isUp ? '+' : ''}{fmt(pnl)}
                         </div>
                       </div>
@@ -187,7 +191,7 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
                     <div className="mobile-card-details">
                       <div className="detail-col">
                         <span className="detail-label">Qty</span>
-                        <span className="detail-val price-mono">{s.quantity}</span>
+                        <span className="detail-val price-mono font-bold text-slate-200">{s.quantity}</span>
                       </div>
                       <div className="detail-col">
                         <span className="detail-label">Buy Avg</span>
@@ -195,24 +199,24 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
                       </div>
                       <div className="detail-col">
                         <span className="detail-label">Live</span>
-                        <span className="detail-val price-mono">{fmtDec(live)}</span>
+                        <span className="detail-val price-mono font-bold text-slate-200">{fmtDec(live)}</span>
                       </div>
                       <div className="detail-col" style={{ textAlign: 'right' }}>
                         <span className="detail-label">Current</span>
-                        <span className="detail-val price-mono" style={{ color: 'var(--neon-cyan)', fontWeight: 700 }}>
+                        <span className="detail-val price-mono text-cyan-400 font-bold">
                           {fmt(live * s.quantity)}
                         </span>
                       </div>
                     </div>
 
                     {s.notes && (
-                      <div className="mobile-card-notes">
+                      <div className="mobile-card-notes" style={{ borderLeft: `2px solid ${isUp ? 'var(--neon-green)' : 'var(--neon-red)'}` }}>
                         <span className="notes-label">Notes:</span> {s.notes}
                       </div>
                     )}
 
                     <div className="mobile-card-actions">
-                      <span className="sector-pill">{s.sector || 'Other'}</span>
+                      <span className={`sector-pill ${sectorClass}`}>{s.sector || 'Other'}</span>
                       <div style={{ display: 'flex', gap: '6px' }}>
                         <button
                           className="btn btn-ghost btn-sm"
@@ -256,17 +260,22 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
           .mobile-cards-wrap {
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            padding: 12px;
+            gap: 12px;
+            padding: 16px;
           }
           .mobile-stock-card {
             background: rgba(255, 255, 255, 0.015);
             border: 1px solid var(--border);
             border-radius: var(--r-md);
-            padding: 12px;
+            padding: 16px;
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 12px;
+            transition: all 0.2s ease;
+          }
+          .mobile-stock-card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.025);
           }
           .mobile-card-row {
             display: flex;
@@ -275,17 +284,19 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
           }
           .mobile-stock-sym {
             font-size: 15px;
-            font-weight: 700;
-            color: var(--text);
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: -0.01em;
           }
           .mobile-stock-name {
             font-size: 11px;
-            color: var(--text-3);
-            margin-top: 1px;
+            color: var(--text-secondary);
+            margin-top: 2px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             max-width: 180px;
+            font-weight: 500;
           }
           .mobile-card-sub {
             font-size: 11px;
@@ -294,10 +305,10 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
           .mobile-card-details {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            border-top: 1px dashed var(--border);
-            border-bottom: 1px dashed var(--border);
-            padding: 8px 0;
-            gap: 4px;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 10px 0;
+            gap: 6px;
           }
           .detail-col {
             display: flex;
@@ -305,33 +316,35 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
             gap: 2px;
           }
           .detail-label {
-            font-size: 9px;
+            font-size: 8px;
             text-transform: uppercase;
-            color: var(--text-3);
-            font-weight: 600;
+            color: var(--text-muted);
+            font-weight: 700;
+            letter-spacing: 0.05em;
           }
           .detail-val {
-            font-size: 11px;
-            color: var(--text-2);
+            font-size: 11.5px;
+            color: var(--text-secondary);
           }
           .mobile-card-notes {
             font-size: 11px;
-            color: var(--text-2);
+            color: var(--text-secondary);
             background: rgba(255, 255, 255, 0.01);
-            padding: 6px 8px;
+            padding: 8px 12px;
             border-radius: var(--r-sm);
-            border-left: 2px solid var(--neon-cyan-dim);
           }
           .notes-label {
-            font-weight: 700;
-            color: var(--text-3);
-            font-size: 10px;
+            font-weight: 800;
+            color: var(--text-muted);
+            font-size: 9px;
             text-transform: uppercase;
+            letter-spacing: 0.05em;
           }
           .mobile-card-actions {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            margin-top: 4px;
           }
         }
       `}} />
