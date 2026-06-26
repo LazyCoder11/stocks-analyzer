@@ -37,14 +37,14 @@ interface AllocationChartsProps {
   portfolio: Stock[];
 }
 
-const NEON_COLORS = [
-  '#10b981', // emerald green
-  '#06b6d4', // neon cyan
-  '#8b5cf6', // neon purple
-  '#f59e0b', // neon amber
-  '#ef4444', // neon red
-  '#f97316', // neon orange
-  '#14b8a6', // neon teal
+const BRAND_COLORS = [
+  '#6366f1', // indigo
+  '#0ea5e9', // sky
+  '#10b981', // emerald
+  '#f59e0b', // amber
+  '#f43f5e', // rose
+  '#8b5cf6', // violet
+  '#14b8a6', // teal
 ];
 
 const fmt = (n: number) => {
@@ -82,7 +82,7 @@ export const AllocationCharts: React.FC<AllocationChartsProps> = ({ portfolio })
       label,
       value: val,
       percentage: pct,
-      color: NEON_COLORS[idx % NEON_COLORS.length],
+      color: BRAND_COLORS[idx % BRAND_COLORS.length],
     };
   }).sort((a, b) => b.percentage - a.percentage);
 
@@ -92,8 +92,8 @@ export const AllocationCharts: React.FC<AllocationChartsProps> = ({ portfolio })
     datasets: [
       {
         data: sectorValues,
-        backgroundColor: sectorLabels.map((_, i) => NEON_COLORS[i % NEON_COLORS.length]),
-        borderColor: '#0b0b13',
+        backgroundColor: sectorLabels.map((_, i) => BRAND_COLORS[i % BRAND_COLORS.length]),
+        borderColor: '#ffffff',
         borderWidth: 2,
         hoverOffset: 6,
         cutout: '72%',
@@ -112,18 +112,18 @@ export const AllocationCharts: React.FC<AllocationChartsProps> = ({ portfolio })
       {
         label: 'Invested',
         data: investedVals,
-        backgroundColor: 'rgba(148, 163, 184, 0.08)',
-        borderColor: 'rgba(148, 163, 184, 0.3)',
+        backgroundColor: 'rgba(148, 163, 184, 0.15)',
+        borderColor: 'rgba(148, 163, 184, 0.5)',
         borderWidth: 1.5,
-        borderRadius: 6,
+        borderRadius: 4,
       },
       {
         label: 'Current',
         data: currentVals,
-        backgroundColor: 'rgba(16, 185, 129, 0.15)',
-        borderColor: '#10b981',
+        backgroundColor: 'rgba(99, 102, 241, 0.15)',
+        borderColor: '#6366f1',
         borderWidth: 1.5,
-        borderRadius: 6,
+        borderRadius: 4,
       },
     ],
   };
@@ -132,32 +132,32 @@ export const AllocationCharts: React.FC<AllocationChartsProps> = ({ portfolio })
     <div className="card accent-line-cyan">
       {/* Header with interactive Tab togglers */}
       <div className="card-header flex items-center justify-between">
-        <div className="card-title flex items-center gap-1.5">
+        <div className="card-title flex items-center gap-1.5 text-slate-700">
           {activeTab === 'sector' ? (
-            <PieChart size={14} className="text-cyan-400" />
+            <PieChart size={14} className="text-sky-600" />
           ) : (
-            <BarChart2 size={14} className="text-emerald-400" />
+            <BarChart2 size={14} className="text-indigo-600" />
           )}
           <span>Analytics</span>
         </div>
         
-        <div className="flex bg-white/[0.03] border border-white/[0.06] p-0.5 rounded-lg">
+        <div className="flex bg-slate-100 border border-slate-200 p-0.5 rounded-lg">
           <button
             onClick={() => setActiveTab('sector')}
-            className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all ${
+            className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md transition-all ${
               activeTab === 'sector'
-                ? 'bg-cyan-500/15 text-cyan-400 shadow-sm'
-                : 'text-slate-500 hover:text-slate-200'
+                ? 'bg-white text-slate-800 shadow-sm border border-slate-200/50'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             Sectors
           </button>
           <button
             onClick={() => setActiveTab('performance')}
-            className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider rounded-md transition-all ${
+            className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md transition-all ${
               activeTab === 'performance'
-                ? 'bg-emerald-500/15 text-emerald-400 shadow-sm'
-                : 'text-slate-500 hover:text-slate-200'
+                ? 'bg-white text-slate-800 shadow-sm border border-slate-200/50'
+                : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             Assets
@@ -190,7 +190,7 @@ export const AllocationCharts: React.FC<AllocationChartsProps> = ({ portfolio })
                   <div key={idx} className="legend-item">
                     <span className="legend-dot" style={{ backgroundColor: seg.color }} />
                     <span>
-                      {seg.label} <strong className="text-slate-300">{seg.percentage.toFixed(0)}%</strong>
+                      {seg.label} <strong className="text-slate-700">{seg.percentage.toFixed(0)}%</strong>
                     </span>
                   </div>
                 ))}
@@ -208,13 +208,13 @@ export const AllocationCharts: React.FC<AllocationChartsProps> = ({ portfolio })
                     plugins: {
                       legend: { display: false },
                       tooltip: {
-                        backgroundColor: '#0c0c16',
-                        titleColor: '#94a3b8',
-                        bodyColor: '#f8fafc',
-                        borderColor: 'rgba(255,255,255,0.08)',
+                        backgroundColor: '#ffffff',
+                        titleColor: '#64748b',
+                        bodyColor: '#0f172a',
+                        borderColor: '#e2e8f0',
                         borderWidth: 1,
                         padding: 10,
-                        bodyFont: { family: 'Plus Jakarta Sans', size: 11, weight: '600' },
+                        bodyFont: { family: 'Inter', size: 12, weight: 'bold' },
                         callbacks: {
                           label: (ctx) => {
                             const val = ctx.raw as number;
@@ -235,10 +235,10 @@ export const AllocationCharts: React.FC<AllocationChartsProps> = ({ portfolio })
                   textAlign: 'center',
                   pointerEvents: 'none'
                 }}>
-                  <div style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', tracking: 'widest', opacity: 0.7 }}>
+                  <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.1em', opacity: 0.8 }}>
                     Total Value
                   </div>
-                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#fff', fontFamily: 'JetBrains Mono', marginTop: '2px' }}>
+                  <div style={{ fontSize: '15px', fontWeight: 800, color: '#0f172a', fontFamily: 'JetBrains Mono', marginTop: '2px' }}>
                     {fmt(totalVal)}
                   </div>
                 </div>
@@ -261,14 +261,14 @@ export const AllocationCharts: React.FC<AllocationChartsProps> = ({ portfolio })
                       grid: { display: false },
                       ticks: {
                         color: '#64748b',
-                        font: { family: 'Plus Jakarta Sans', size: 9, weight: 600 },
+                        font: { family: 'Inter', size: 11, weight: 'normal' },
                       },
                     },
                     y: {
-                      grid: { color: 'rgba(255,255,255,0.03)' },
+                      grid: { color: 'rgba(0,0,0,0.05)' },
                       ticks: {
                         color: '#64748b',
-                        font: { family: 'Plus Jakarta Sans', size: 9 },
+                        font: { family: 'Inter', size: 11 },
                         callback: (v) => `₹${Number(v) >= 100000 ? (Number(v)/100000).toFixed(1) + 'L' : Number(v) >= 1000 ? (Number(v)/1000).toFixed(0) + 'k' : v}`,
                       },
                     },
@@ -279,22 +279,22 @@ export const AllocationCharts: React.FC<AllocationChartsProps> = ({ portfolio })
                       position: 'top',
                       align: 'end',
                       labels: {
-                        color: '#94a3b8',
+                        color: '#475569',
                         boxWidth: 6,
                         boxHeight: 6,
                         usePointStyle: true,
                         pointStyle: 'circle',
-                        font: { family: 'Plus Jakarta Sans', size: 9, weight: 700 },
+                        font: { family: 'Inter', size: 11, weight: 'bold' },
                       },
                     },
                     tooltip: {
-                      backgroundColor: '#0c0c16',
-                      titleColor: '#94a3b8',
-                      bodyColor: '#f8fafc',
-                      borderColor: 'rgba(255,255,255,0.08)',
+                      backgroundColor: '#ffffff',
+                      titleColor: '#64748b',
+                      bodyColor: '#0f172a',
+                      borderColor: '#e2e8f0',
                       borderWidth: 1,
                       padding: 10,
-                      bodyFont: { family: 'Plus Jakarta Sans', size: 11, weight: '600' },
+                      bodyFont: { family: 'Inter', size: 12, weight: 'bold' },
                       callbacks: {
                         label: (ctx) => ` ${ctx.dataset.label}: ${fmt(ctx.raw as number)}`
                       }
