@@ -1,47 +1,47 @@
 """
-📈 Market Data & Technical Analysis
-Fetches live prices, 52W high/low, RSI, moving averages from Yahoo Finance (free).
+📈 Market Technical Analysis
+============================
+Provides RSI, MACD, moving averages, support/resistance, and comprehensive
+technical data for portfolio stocks.
+
+Live prices are sourced from utils.price_fetcher (NSE Direct API + yfinance fallback).
+This module handles ONLY historical / technical analysis — not real-time price fetching.
 """
 
 import logging
 import yfinance as yf
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
 
-def get_live_price(yf_symbol: str) -> float:
-    """Get current market price."""
-    ticker = yf.Ticker(yf_symbol)
-    info = ticker.fast_info
-    return round(info.last_price or info.previous_close, 2)
-
+# ─── Technical Indicators ──────────────────────────────────────────────────────
 
 def calculate_rsi(prices: pd.Series, period: int = 14) -> float:
     """Calculate RSI (Relative Strength Index)."""
     delta = prices.diff()
-    gain = delta.where(delta > 0, 0).rolling(period).mean()
-    loss = -delta.where(delta < 0, 0).rolling(period).mean()
-    rs = gain / loss
-    rsi = 100 - (100 / (1 + rs))
+    gain  = delta.where(delta > 0, 0).rolling(period).mean()
+    loss  = -delta.where(delta < 0, 0).rolling(period).mean()
+    rs    = gain / loss
+    rsi   = 100 - (100 / (1 + rs))
     return round(rsi.iloc[-1], 1)
 
 
-def calculate_macd(prices: pd.Series):
-    """Calculate MACD line, signal, and histogram."""
-    ema12 = prices.ewm(span=12, adjust=False).mean()
-    ema26 = prices.ewm(span=26, adjust=False).mean()
+def calculate_macd(prices: pd.Series) -> tuple[float, float, float]:
+    """Calculate MACD line, signal line, and histogram."""
+    ema12     = prices.ewm(span=12, adjust=False).mean()
+    ema26     = prices.ewm(span=26, adjust=False).mean()
     macd_line = ema12 - ema26
-    signal = macd_line.ewm(span=9, adjust=False).mean()
+    signal    = macd_line.ewm(span=9, adjust=False).mean()
     histogram = macd_line - signal
     return round(macd_line.iloc[-1], 2), round(signal.iloc[-1], 2), round(histogram.iloc[-1], 2)
 
 
 def get_trend(prices: pd.Series) -> str:
-    """Determine price trend using 20 & 50 day MA."""
-    ma20 = prices.rolling(20).mean().iloc[-1]
-    ma50 = prices.rolling(50).mean().iloc[-1]
+    """Determine price trend using 20 & 50 day moving averages."""
+    ma20    = prices.rolling(20).mean().iloc[-1]
+    ma50    = prices.rolling(50).mean().iloc[-1]
     current = prices.iloc[-1]
 
     if current > ma20 > ma50:
@@ -56,36 +56,40 @@ def get_trend(prices: pd.Series) -> str:
         return "SIDEWAYS ➡️"
 
 
-def get_support_resistance(prices: pd.Series) -> tuple:
-    """Simple support/resistance using recent lows/highs."""
+def get_support_resistance(prices: pd.Series) -> tuple[float, float]:
+    """Simple support/resistance using recent 30-day lows/highs."""
     recent_30 = prices.tail(30)
-    support = round(recent_30.min(), 2)
-    resistance = round(recent_30.max(), 2)
-    return support, resistance
+    return round(recent_30.min(), 2), round(recent_30.max(), 2)
 
 
-def get_technical_data(symbol_or_yf: str) -> dict:
+# ─── Full Technical Data ───────────────────────────────────────────────────────
+
+def get_technical_data(yf_symbol: str, live_price: float | None = None) -> dict:
     """
-    Fetch comprehensive technical data for a stock.
-    Accepts either 'RELIANCE' or 'RELIANCE.NS'
-    """
-    yf_symbol = symbol_or_yf if "." in symbol_or_yf else f"{symbol_or_yf}.NS"
+    Fetch comprehensive technical data for a stock using 1-year daily history.
 
+    Parameters
+    ----------
+    yf_symbol   : yfinance symbol, e.g. 'RELIANCE.NS'
+    live_price  : current price from price_fetcher (preferred over hist close)
+
+    Returns a dict with RSI, MACD, MAs, 52W high/low, trend, support/resistance,
+    volume analysis, and available fundamental data.
+    """
     try:
         ticker = yf.Ticker(yf_symbol)
+        hist   = ticker.history(period="1y", interval="1d")
 
-        # Get 1 year of daily data for technicals
-        hist = ticker.history(period="1y", interval="1d")
         if hist.empty:
             raise ValueError(f"No historical data for {yf_symbol}")
 
-        closes = hist["Close"]
+        closes  = hist["Close"]
         volumes = hist["Volume"]
 
-        # Live price
-        live_price = round(closes.iloc[-1], 2)
+        # Use live price if provided, otherwise use last close
+        current_price = live_price if live_price is not None else round(closes.iloc[-1], 2)
 
-        # 52-week high/low
+        # 52-week range
         high_52w = round(closes.max(), 2)
         low_52w  = round(closes.min(), 2)
 
@@ -94,64 +98,59 @@ def get_technical_data(symbol_or_yf: str) -> dict:
         ma50  = round(closes.rolling(50).mean().iloc[-1], 2)
         ma200 = round(closes.rolling(200).mean().iloc[-1], 2) if len(closes) >= 200 else None
 
-        # Volume analysis
-        avg_vol_20d  = int(volumes.tail(20).mean())
-        today_vol    = int(volumes.iloc[-1])
-        vol_vs_avg   = round((today_vol / avg_vol_20d) * 100, 1) if avg_vol_20d else 0
+        # Volume
+        avg_vol_20d = int(volumes.tail(20).mean())
+        today_vol   = int(volumes.iloc[-1])
+        vol_vs_avg  = round((today_vol / avg_vol_20d) * 100, 1) if avg_vol_20d else 0
 
-        # Technical indicators
-        rsi = calculate_rsi(closes)
+        # Indicators
+        rsi                          = calculate_rsi(closes)
         macd_line, macd_signal, macd_hist = calculate_macd(closes)
-        trend = get_trend(closes)
-        support, resistance = get_support_resistance(closes)
+        trend                        = get_trend(closes)
+        support, resistance          = get_support_resistance(closes)
 
-        # % change: day, week, month
-        day_change   = round(((closes.iloc[-1] - closes.iloc[-2]) / closes.iloc[-2]) * 100, 2) if len(closes) >= 2 else 0
-        week_change  = round(((closes.iloc[-1] - closes.iloc[-6]) / closes.iloc[-6]) * 100, 2) if len(closes) >= 6 else 0
+        # Period % changes
+        day_change   = round(((closes.iloc[-1] - closes.iloc[-2]) / closes.iloc[-2]) * 100, 2) if len(closes) >= 2  else 0
+        week_change  = round(((closes.iloc[-1] - closes.iloc[-6]) / closes.iloc[-6]) * 100, 2) if len(closes) >= 6  else 0
         month_change = round(((closes.iloc[-1] - closes.iloc[-22]) / closes.iloc[-22]) * 100, 2) if len(closes) >= 22 else 0
 
-        # Fundamentals from ticker.info
+        # Fundamentals — best-effort (often blocked on cloud IPs)
         info = {}
         try:
-            info = ticker.info
-        except:
+            info = ticker.info or {}
+        except Exception:
             pass
 
         return {
-            "live_price":    live_price,
-            "high_52w":      high_52w,
-            "low_52w":       low_52w,
-            "ma20":          ma20,
-            "ma50":          ma50,
-            "ma200":         ma200,
-            "rsi":           rsi,
-            "macd":          macd_line,
-            "macd_signal":   macd_signal,
-            "macd_hist":     macd_hist,
-            "trend":         trend,
-            "support":       support,
-            "resistance":    resistance,
-            "day_change_pct":   day_change,
-            "week_change_pct":  week_change,
-            "month_change_pct": month_change,
-            "avg_volume_20d":   avg_vol_20d,
-            "today_volume":     today_vol,
-            "vol_vs_avg_pct":   vol_vs_avg,
+            "live_price":        current_price,
+            "high_52w":          high_52w,
+            "low_52w":           low_52w,
+            "ma20":              ma20,
+            "ma50":              ma50,
+            "ma200":             ma200,
+            "rsi":               rsi,
+            "macd":              macd_line,
+            "macd_signal":       macd_signal,
+            "macd_hist":         macd_hist,
+            "trend":             trend,
+            "support":           support,
+            "resistance":        resistance,
+            "day_change_pct":    day_change,
+            "week_change_pct":   week_change,
+            "month_change_pct":  month_change,
+            "avg_volume_20d":    avg_vol_20d,
+            "today_volume":      today_vol,
+            "vol_vs_avg_pct":    vol_vs_avg,
             # Fundamentals
-            "pe_ratio":       info.get("trailingPE"),
-            "pb_ratio":       info.get("priceToBook"),
-            "market_cap":     info.get("marketCap"),
-            "dividend_yield": info.get("dividendYield"),
-            "sector":         info.get("sector", ""),
-            "book_value":     info.get("bookValue"),
+            "pe_ratio":          info.get("trailingPE"),
+            "pb_ratio":          info.get("priceToBook"),
+            "market_cap":        info.get("marketCap"),
+            "dividend_yield":    info.get("dividendYield"),
+            "sector":            info.get("sector", ""),
+            "book_value":        info.get("bookValue"),
         }
 
     except Exception as e:
         logger.warning(f"Could not fetch technical data for {yf_symbol}: {e}")
-        # Return minimal data so analysis still runs
-        try:
-            ticker = yf.Ticker(yf_symbol)
-            fast = ticker.fast_info
-            return {"live_price": round(fast.last_price or 0, 2)}
-        except:
-            return {"live_price": 0}
+        # Return minimal data so the analysis pipeline still runs
+        return {"live_price": live_price or 0.0}

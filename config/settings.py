@@ -27,16 +27,6 @@ OPENROUTER_API_KEY = _require("OPENROUTER_API_KEY")
 TELEGRAM_BOT_TOKEN = _require("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID   = _require("TELEGRAM_CHAT_ID")
 
-# ─── Google Sheets ───────────────────────────────────────────────────────────────
-_sources = [s.strip().lower() for s in os.environ.get("PORTFOLIO_SOURCES", "local").split(",") if s.strip()]
-if "sheets" in _sources:
-    GOOGLE_SHEETS_ID = _require("GOOGLE_SHEETS_ID")
-else:
-    GOOGLE_SHEETS_ID = os.environ.get("GOOGLE_SHEETS_ID", "")
-
-GOOGLE_SHEET_TAB_NAME   = os.environ.get("GOOGLE_SHEET_TAB_NAME", "Portfolio")
-GOOGLE_CREDENTIALS_PATH = os.environ.get("GOOGLE_CREDENTIALS_PATH", "config/google_credentials.json")
-
 # ─── Schedule Times (IST 24hr) ──────────────────────────────────────────────────
 MORNING_HOUR = 8   # 8:30 AM IST
 EVENING_HOUR = 18  # 6:00 PM IST

@@ -190,5 +190,16 @@ def db_get_users_with_portfolios() -> list:
     """
     return run_query(query)
 
+def db_get_all_yf_symbols() -> list[str]:
+    """Return every distinct yf_symbol across all users (for price cache warm-up)."""
+    query = "SELECT DISTINCT yf_symbol FROM portfolio WHERE yf_symbol IS NOT NULL;"
+    try:
+        rows = run_query(query)
+        return [r["yf_symbol"] for r in rows if r.get("yf_symbol")]
+    except Exception as e:
+        logger.error(f"Error fetching all yf_symbols: {e}")
+        return []
+
+
 # Initialize DB on load
 init_db()

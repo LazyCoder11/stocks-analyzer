@@ -1,17 +1,35 @@
 """
-🖥️  Stock Analyzer Web App
-Manage your portfolio through a browser UI.
-Run: python web_app.py  →  open http://localhost:5000
+🖥️  Stock Analyzer — Flask API Server
+======================================
+Serves the Next.js frontend via a set of authenticated REST endpoints.
+
+Endpoints
+---------
+  GET  /api/portfolio          → Holdings enriched with live prices (from cache)
+  POST /api/portfolio          → Add a new stock
+  PUT  /api/portfolio/<id>     → Update a stock
+  DEL  /api/portfolio/<id>     → Delete a stock
+  GET  /api/lookup/<symbol>    → Validate symbol, return name + live price
+  GET  /api/prices             → Full price cache snapshot (for frontend polling)
+  GET  /api/news               → Latest news for portfolio symbols
+  POST /api/run-analysis       → Trigger AI analysis → Telegram
+
+Run locally:  python web_app.py  →  http://localhost:5000
+Production:   gunicorn is configured via render.yaml
 """
 
-import sys, io
-sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+import sys
+import io
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
-import json
 import os
 import uuid
-from pathlib import Path
-from flask import Flask, jsonify, request, send_from_directory
+import logging
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
+from flask import Flask, jsonify, request
+from concurrent.futures import ThreadPoolExecutor
 
 # Load .env
 try:
@@ -20,44 +38,71 @@ try:
 except ImportError:
     pass
 
-import os
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-app = Flask(__name__, static_folder=os.path.join(BASE_DIR, "static"), static_url_path="")
-
 from utils.db import db_load_portfolio as load_portfolio, db_save_portfolio as save_portfolio
+from utils.price_fetcher import price_fetcher
+
+# ─── App Setup ─────────────────────────────────────────────────────────────────
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+IST = ZoneInfo("Asia/Kolkata")
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger(__name__)
+
+app = Flask(__name__)
 
 
-# ─── Static / Frontend ────────────────────────────────────────────────────────
+# ─── Bootstrap: warm up price cache on startup ─────────────────────────────────
 
-@app.route("/")
-def index():
-    return app.send_static_file("index.html")
+def _get_all_yf_symbols() -> list[str]:
+    """Collect every yf_symbol across all users in the DB."""
+    try:
+        from utils.db import db_get_all_yf_symbols
+        return db_get_all_yf_symbols()
+    except Exception as e:
+        logger.warning(f"Could not pre-load symbols from DB: {e}")
+        return []
 
 
-# ─── Portfolio API ────────────────────────────────────────────────────────────
+def _bootstrap_price_fetcher():
+    """Start the background price engine once the server is up."""
+    symbols = _get_all_yf_symbols()
+    if symbols:
+        logger.info(f"Starting PriceFetcher with {len(symbols)} symbols.")
+        price_fetcher.start(symbols)
+    else:
+        logger.warning("No symbols found in DB — PriceFetcher will start empty.")
+        price_fetcher.start([])
+
+
+_bootstrap_price_fetcher()
+
+
+# ─── Portfolio API ─────────────────────────────────────────────────────────────
 
 @app.route("/api/portfolio", methods=["GET"])
 def get_portfolio():
-    """Return all holdings with live prices."""
+    """Return all holdings enriched with live prices (served from cache)."""
     portfolio = load_portfolio()
+    all_prices = price_fetcher.get_all_prices()
 
-    # Enrich with live price in background (fast_info only)
     enriched = []
     for stock in portfolio:
         item = stock.copy()
-        try:
-            import yfinance as yf
-            sym = stock["yf_symbol"]
-            ticker = yf.Ticker(sym)
-            fi = ticker.fast_info
-            live = round(fi.last_price or fi.previous_close or stock["buy_price"], 2)
-            item["live_price"] = live
-            item["pnl"] = round((live - stock["buy_price"]) * stock["quantity"], 2)
-            item["pnl_pct"] = round(((live - stock["buy_price"]) / stock["buy_price"]) * 100, 2) if stock["buy_price"] else 0
-        except Exception:
-            item["live_price"] = stock.get("buy_price", 0)
-            item["pnl"] = 0
-            item["pnl_pct"] = 0
+        sym  = stock["yf_symbol"]
+        live = all_prices.get(sym) or price_fetcher.get_price(sym) or stock["buy_price"]
+        live = round(live, 2)
+
+        item["live_price"] = live
+        item["pnl"]        = round((live - stock["buy_price"]) * stock["quantity"], 2)
+        item["pnl_pct"]    = (
+            round(((live - stock["buy_price"]) / stock["buy_price"]) * 100, 2)
+            if stock["buy_price"] else 0
+        )
         enriched.append(item)
 
     return jsonify(enriched)
@@ -69,19 +114,16 @@ def add_stock():
     data = request.get_json()
     required = ["symbol", "quantity", "buy_price", "exchange"]
     for field in required:
-        if field not in data or data[field] == "" or data[field] is None:
+        if not data.get(field) and data.get(field) != 0:
             return jsonify({"error": f"'{field}' is required"}), 400
 
     portfolio = load_portfolio()
+    symbol    = str(data["symbol"]).strip().upper()
+    exchange  = str(data.get("exchange", "NSE")).strip().upper()
+    yf_sym    = f"{symbol}.NS" if exchange == "NSE" else f"{symbol}.BO"
 
-    symbol   = str(data["symbol"]).strip().upper()
-    exchange = str(data.get("exchange", "NSE")).strip().upper()
-    yf_sym   = f"{symbol}.NS" if exchange == "NSE" else f"{symbol}.BO"
-
-    # Check duplicate
-    for s in portfolio:
-        if s["symbol"] == symbol:
-            return jsonify({"error": f"{symbol} already exists. Use Edit to update it."}), 409
+    if any(s["symbol"] == symbol for s in portfolio):
+        return jsonify({"error": f"{symbol} already exists. Use Edit to update it."}), 409
 
     entry = {
         "id":           str(uuid.uuid4()),
@@ -96,13 +138,17 @@ def add_stock():
     }
     portfolio.append(entry)
     save_portfolio(portfolio)
+
+    # Hot-add the new symbol to the price cache
+    price_fetcher.update_symbols(_get_all_yf_symbols())
+
     return jsonify(entry), 201
 
 
 @app.route("/api/portfolio/<stock_id>", methods=["PUT"])
 def update_stock(stock_id):
     """Update an existing stock."""
-    data = request.get_json()
+    data      = request.get_json()
     portfolio = load_portfolio()
 
     for i, s in enumerate(portfolio):
@@ -121,6 +167,7 @@ def update_stock(stock_id):
                 "notes":        str(data.get("notes", s["notes"])).strip(),
             }
             save_portfolio(portfolio)
+            price_fetcher.update_symbols(_get_all_yf_symbols())
             return jsonify(portfolio[i])
 
     return jsonify({"error": "Stock not found"}), 404
@@ -130,183 +177,176 @@ def update_stock(stock_id):
 def delete_stock(stock_id):
     """Remove a stock from the portfolio."""
     portfolio = load_portfolio()
-    updated = [s for s in portfolio if s["id"] != stock_id]
+    updated   = [s for s in portfolio if s["id"] != stock_id]
     if len(updated) == len(portfolio):
         return jsonify({"error": "Stock not found"}), 404
     save_portfolio(updated)
+    price_fetcher.update_symbols(_get_all_yf_symbols())
     return jsonify({"ok": True})
 
 
+# ─── Live Prices Endpoint ──────────────────────────────────────────────────────
+
+@app.route("/api/prices", methods=["GET"])
+def get_prices():
+    """
+    Return the full price cache snapshot.
+    Frontend polls this every 30s to refresh displayed prices.
+    """
+    last_refreshed = price_fetcher.get_last_refreshed()
+    return jsonify({
+        "market_open":    price_fetcher.is_market_open(),
+        "last_refreshed": last_refreshed.isoformat() if last_refreshed else None,
+        "prices":         price_fetcher.get_all_prices(),
+    })
+
+
+# ─── Symbol Lookup ─────────────────────────────────────────────────────────────
+
 @app.route("/api/lookup/<symbol>")
 def lookup_symbol(symbol):
-    """Quick lookup — validate a symbol and return company name + live price."""
+    """Validate a symbol and return company name + live price."""
+    import yfinance as yf
+
     exchange = request.args.get("exchange", "NSE").upper()
     yf_sym   = f"{symbol.upper()}.NS" if exchange == "NSE" else f"{symbol.upper()}.BO"
-    
-    # Default fallback values
-    name = symbol.upper()
-    live = 0.0
+
+    name   = symbol.upper()
+    live   = price_fetcher.get_price(yf_sym) or 0.0
     sector = "Other"
-    
+
     try:
-        import yfinance as yf
         ticker = yf.Ticker(yf_sym)
-        
-        # 1. Try to get live price from fast_info (often works on cloud IPs)
         try:
-            fi = ticker.fast_info
-            live = fi.last_price or fi.previous_close or 0
+            info   = ticker.info or {}
+            name   = info.get("longName") or info.get("shortName") or name
+            sector = info.get("sector") or sector
         except Exception:
-            # Fallback to history close price
+            pass
+
+        # If price_fetcher had no cache for this symbol, try yfinance
+        if not live:
             try:
-                hist = ticker.history(period="1d")
-                if not hist.empty:
-                    live = hist['Close'].iloc[-1]
+                fi   = ticker.fast_info
+                live = round(fi.last_price or fi.previous_close or 0, 2)
             except Exception:
                 pass
-
-        # 2. Try to get company name and sector from info (full scrape, often blocked on cloud IPs)
-        try:
-            info = ticker.info
-            if info:
-                name = info.get("longName") or info.get("shortName") or name
-                sector = info.get("sector") or sector
-        except Exception:
-            # Silently pass, we will use default symbol and "Other" sector
-            pass
 
         return jsonify({
             "valid":        True,
             "symbol":       symbol.upper(),
             "company_name": name,
-            "live_price":   round(live, 2) if live else 0.0,
+            "live_price":   round(live, 2),
             "sector":       sector,
         })
     except Exception as e:
         return jsonify({"valid": False, "error": str(e)}), 400
 
 
+# ─── News ──────────────────────────────────────────────────────────────────────
+
 @app.route("/api/news")
 def get_stock_news():
-    """Fetch news for stock symbols."""
+    """Fetch latest news for comma-separated yf_symbol list."""
+    import yfinance as yf
+
     symbols_str = request.args.get("symbols", "")
     if not symbols_str:
         return jsonify([])
 
-    yf_symbols = [s.strip() for s in symbols_str.split(",") if s.strip()]
-    if not yf_symbols:
-        return jsonify([])
+    yf_symbols = [s.strip() for s in symbols_str.split(",") if s.strip()][:5]
 
-    import yfinance as yf
-    from concurrent.futures import ThreadPoolExecutor
+    def parse_article(raw: dict, sym: str) -> dict | None:
+        content   = raw.get("content", raw) if "content" in raw else raw
+        title     = content.get("title") or raw.get("title") or ""
+        if not title:
+            return None
 
-    # Limit to maximum 5 symbols to avoid slow response / rate limits
-    yf_symbols = yf_symbols[:5]
-
-    def parse_article(raw_article, sym):
-        # Format adapter: handles both old flat and new nested structures
-        content = raw_article.get("content", {}) if "content" in raw_article else raw_article
-        
-        # Title
-        title = content.get("title") or raw_article.get("title") or ""
-        
-        # Link
         link = ""
-        canonical = content.get("canonicalUrl", {})
-        if isinstance(canonical, dict):
-            link = canonical.get("url")
+        for key in ("canonicalUrl", "clickThroughUrl"):
+            obj = content.get(key, {})
+            if isinstance(obj, dict):
+                link = obj.get("url", "")
+            if link:
+                break
         if not link:
-            clickthrough = content.get("clickThroughUrl", {})
-            if isinstance(clickthrough, dict):
-                link = clickthrough.get("url")
-        if not link:
-            link = content.get("link") or raw_article.get("link") or ""
-            
-        # Publisher
+            link = content.get("link") or raw.get("link") or ""
+
         publisher = ""
-        provider = content.get("provider", {})
+        provider  = content.get("provider", {})
         if isinstance(provider, dict):
-            publisher = provider.get("displayName")
-        if not publisher:
-            publisher = raw_article.get("publisher") or "Yahoo Finance"
-            
-        # Publish Time
+            publisher = provider.get("displayName", "")
+        publisher = publisher or raw.get("publisher") or "Yahoo Finance"
+
         pub_time = 0
-        pub_date_str = content.get("pubDate") or raw_article.get("pubDate")
-        if pub_date_str:
+        pub_str  = content.get("pubDate") or raw.get("pubDate")
+        if pub_str:
             try:
-                from datetime import datetime
-                # Parse ISO date string (e.g. "2026-06-22T05:09:16Z")
-                # Remove Z and parse
-                dt = datetime.strptime(pub_date_str.replace("Z", ""), "%Y-%m-%dT%H:%M:%S")
-                pub_time = int(dt.timestamp())
+                from datetime import datetime as dt
+                pub_time = int(dt.strptime(pub_str.replace("Z", ""), "%Y-%m-%dT%H:%M:%S").timestamp())
             except Exception:
                 pass
         if not pub_time:
-            pub_time = content.get("providerPublishTime") or raw_article.get("providerPublishTime") or 0
-            
-        return {
-            "title": title,
-            "link": link,
-            "publisher": publisher,
-            "providerPublishTime": int(pub_time),
-            "yf_symbol": sym
-        }
+            pub_time = content.get("providerPublishTime") or raw.get("providerPublishTime") or 0
 
-    def fetch_single(sym):
+        return {"title": title, "link": link, "publisher": publisher,
+                "providerPublishTime": int(pub_time), "yf_symbol": sym}
+
+    def fetch_single(sym: str) -> list:
         try:
-            ticker = yf.Ticker(sym)
-            news = ticker.news or []
-            parsed = [parse_article(art, sym) for art in news]
-            return parsed
+            return [
+                a for a in (parse_article(r, sym) for r in (yf.Ticker(sym).news or []))
+                if a is not None
+            ]
         except Exception:
             return []
 
-    all_news = []
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        results = executor.map(fetch_single, yf_symbols)
-        for r in results:
-            all_news.extend(r)
+    all_news: list = []
+    with ThreadPoolExecutor(max_workers=5) as pool:
+        for batch in pool.map(fetch_single, yf_symbols):
+            all_news.extend(batch)
 
-    # Sort all news by publish time descending
     all_news.sort(key=lambda x: x.get("providerPublishTime", 0), reverse=True)
 
-    # De-duplicate by title or link
-    seen_links = set()
-    unique_news = []
+    seen, unique = set(), []
     for article in all_news:
         link = article.get("link")
-        if link and link not in seen_links:
-            seen_links.add(link)
-            unique_news.append(article)
+        if link and link not in seen:
+            seen.add(link)
+            unique.append(article)
 
-    # Return top 15 articles
-    return jsonify(unique_news[:15])
+    return jsonify(unique[:15])
 
+
+# ─── AI Analysis Trigger ───────────────────────────────────────────────────────
 
 @app.route("/api/run-analysis", methods=["POST"])
 def run_analysis_now():
-    """Trigger the analyzer manually from the UI."""
-    data = request.get_json() or {}
-    session = data.get("session", "morning")
-    user_id = data.get("user_id")
-    chat_id = data.get("chat_id")
+    """Trigger the AI analysis pipeline → sends report to Telegram."""
+    import threading
+    data     = request.get_json() or {}
+    session  = data.get("session", "morning")
+    user_id  = data.get("user_id")
+    chat_id  = data.get("chat_id")
     try:
-        # Make sure analyzer uses local portfolio
         os.environ["PORTFOLIO_SOURCES"] = "local"
         from analyzer import run_analysis
-        import threading
-        t = threading.Thread(target=run_analysis, args=(session, user_id, chat_id), daemon=True)
+        t = threading.Thread(
+            target=run_analysis, args=(session, user_id, chat_id), daemon=True
+        )
         t.start()
         return jsonify({"ok": True, "message": f"{session.capitalize()} analysis started — check Telegram!"})
     except Exception as e:
         return jsonify({"ok": False, "error": str(e)}), 500
 
 
+# ─── Entry Point ───────────────────────────────────────────────────────────────
+
 if __name__ == "__main__":
-    print("\n" + "═" * 50)
-    print("  📊 Stock Analyzer Portfolio Manager")
-    print("═" * 50)
-    print("  ➜  Open in browser: http://localhost:5000")
+    print("\n" + "═" * 52)
+    print("  📊  Stock Analyzer — API Server")
+    print("═" * 52)
+    print("  ➜  Local:   http://localhost:5000")
+    print("  ➜  Prices:  http://localhost:5000/api/prices")
     print("  ➜  Press Ctrl+C to stop\n")
     app.run(debug=False, port=5000, host="0.0.0.0")

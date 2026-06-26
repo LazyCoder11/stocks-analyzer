@@ -18,41 +18,32 @@ export async function GET(req: Request) {
 
     const backendUrl = process.env.PYTHON_BACKEND_URL || 'http://127.0.0.1:5000';
 
-    // Enrich with live price in parallel (call Flask backend API)
-    const enriched = await Promise.all(
-      holdings.map(async (stock) => {
-        try {
-          const res = await fetch(
-            `${backendUrl}/api/lookup/${stock.symbol}?exchange=${stock.exchange}`,
-            { next: { revalidate: 60 } } // Cache lookup for 60 seconds
-          );
-          if (res.ok) {
-            const data = await res.json();
-            if (data.valid) {
-              const live = data.live_price || stock.buy_price;
-              const pnl = (live - stock.buy_price) * stock.quantity;
-              const pnlPct = stock.buy_price ? ((live - stock.buy_price) / stock.buy_price) * 100 : 0;
-              return {
-                ...stock,
-                live_price: Math.round(live * 100) / 100,
-                pnl: Math.round(pnl * 100) / 100,
-                pnl_pct: Math.round(pnlPct * 100) / 100,
-              };
-            }
-          }
-        } catch (error) {
-          console.error(`Failed to enrich live price for ${stock.symbol}:`, error);
-        }
-        
-        // Fallback if lookup fails
-        return {
-          ...stock,
-          live_price: stock.buy_price,
-          pnl: 0,
-          pnl_pct: 0,
-        };
-      })
-    );
+    // Fetch all cached live prices from Flask in one request
+    let priceMap: Record<string, number> = {};
+    try {
+      const pricesRes = await fetch(`${backendUrl}/api/prices`, { cache: 'no-store' });
+      if (pricesRes.ok) {
+        const pricesData = await pricesRes.json();
+        priceMap = pricesData.prices || {};
+      }
+    } catch (err) {
+      console.error('Failed to fetch batch prices from Flask backend:', err);
+    }
+
+    // Enrich holdings using the cached priceMap
+    const enriched = holdings.map((stock) => {
+      const yfSym = stock.yf_symbol;
+      const live = priceMap[yfSym] !== undefined ? priceMap[yfSym] : stock.buy_price;
+      const pnl = (live - stock.buy_price) * stock.quantity;
+      const pnlPct = stock.buy_price ? ((live - stock.buy_price) / stock.buy_price) * 100 : 0;
+
+      return {
+        ...stock,
+        live_price: Math.round(live * 100) / 100,
+        pnl: Math.round(pnl * 100) / 100,
+        pnl_pct: Math.round(pnlPct * 100) / 100,
+      };
+    });
 
     return NextResponse.json(enriched);
   } catch (error) {

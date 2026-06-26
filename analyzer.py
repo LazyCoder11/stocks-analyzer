@@ -1,7 +1,8 @@
 """
 📊 Stock Portfolio Analyzer
-Reads from Google Sheets → Fetches News → Analyzes via OpenRouter AI → Sends to Telegram
-Runs twice daily: 8:30 AM & 6:00 PM IST
+Fetches portfolio → Enriches with live prices (NSE API) → Technical analysis
+→ AI analysis via OpenRouter → Sends report to Telegram
+Runs twice daily: 8:30 AM & 6:00 PM IST via run_scheduler()
 """
 
 import os
@@ -14,13 +15,13 @@ from datetime import datetime, date
 from zoneinfo import ZoneInfo
 from config.settings import (
     OPENROUTER_API_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
-    GOOGLE_SHEETS_ID, GOOGLE_CREDENTIALS_PATH,
     MORNING_HOUR, EVENING_HOUR
 )
 from utils.portfolio import fetch_combined_portfolio
 from utils.news import fetch_stock_news
 from utils.telegram import send_telegram_message, send_telegram_photo
-from utils.market import get_live_price, get_technical_data
+from utils.market import get_technical_data
+from utils.price_fetcher import price_fetcher
 import sys
 import codecs
 if sys.platform.startswith("win"):
@@ -265,13 +266,24 @@ def run_analysis(session: str = "morning", user_id: str = None, chat_id: str = N
 
         # Step 2: Enrich portfolio with live prices & technicals
         logger.info("💹 Fetching live prices and technical data...")
+
+        # Start price fetcher if not already running (e.g. when called standalone)
+        symbols = [s["yf_symbol"] for s in portfolio]
+        if not price_fetcher.get_all_prices():
+            price_fetcher.start(symbols)
+
+        all_prices = price_fetcher.get_all_prices()
+
         for stock in portfolio:
+            yf_sym = stock.get("yf_symbol", f"{stock['symbol']}.NS")
+            live   = all_prices.get(yf_sym) or price_fetcher.get_price(yf_sym) or stock["buy_price"]
             try:
-                enriched = get_technical_data(stock["symbol"])
+                enriched = get_technical_data(yf_sym, live_price=live)
                 stock.update(enriched)
                 logger.info(f"  ✅ {stock['symbol']}: ₹{stock.get('live_price', 'N/A')}")
             except Exception as e:
-                logger.warning(f"  ⚠️ Could not fetch data for {stock['symbol']}: {e}")
+                stock["live_price"] = live
+                logger.warning(f"  ⚠️ Could not fetch technical data for {stock['symbol']}: {e}")
 
         # Step 3: Fetch latest news for each stock
         logger.info("📰 Fetching latest news...")
