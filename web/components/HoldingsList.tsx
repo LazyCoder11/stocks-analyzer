@@ -52,11 +52,10 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
     <div className="card accent-line-green">
       <div className="card-header">
         <div className="card-title">
-          <Briefcase size={14} className="text-emerald-400" />
           <span>PORTFOLIO ASSETS ({portfolio.length})</span>
         </div>
       </div>
-      
+
       <div className="card-inner" style={{ padding: '0' }}>
         {loading ? (
           <div className="loading-row">
@@ -82,7 +81,7 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
                 <thead>
                   <tr>
                     <th style={{ paddingLeft: '20px' }}>Stock / Company</th>
-                    <th>Sector</th>
+                    {/* <th>Sector</th> */}
                     <th style={{ textAlign: 'right' }}>Qty</th>
                     <th style={{ textAlign: 'right' }}>Avg Price</th>
                     <th style={{ textAlign: 'right' }}>Live Price</th>
@@ -98,7 +97,7 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
                     const pnl = s.pnl !== undefined ? s.pnl : (live - s.buy_price) * s.quantity;
                     const pnlPct = s.pnl_pct !== undefined ? s.pnl_pct : (s.buy_price ? ((live - s.buy_price) / s.buy_price) * 100 : 0);
                     const isUp = pnl >= 0;
-                    
+
                     // Generate clean sector class for badge styling
                     const sectorClass = s.sector ? s.sector.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-') : 'other';
 
@@ -111,26 +110,26 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
                           </div>
                           <div className="stock-name" title={s.company_name}>{s.company_name}</div>
                         </td>
-                        <td>
+                        {/* <td>
                           <span className={`sector-pill ${sectorClass}`}>{s.sector || 'Other'}</span>
-                        </td>
-                        <td className="price-mono text-white" style={{ textAlign: 'right', fontWeight: 600 }}>
+                        </td> */}
+                        <td className="  text-white" style={{ textAlign: 'right', fontWeight: 600 }}>
                           {s.quantity}
                         </td>
-                        <td className="price-mono text-slate-500" style={{ textAlign: 'right' }}>
+                        <td className="  text-slate-500" style={{ textAlign: 'right' }}>
                           {fmtDec(s.buy_price)}
                         </td>
-                        <td className="price-mono text-slate-200" style={{ textAlign: 'right', fontWeight: 600 }}>
+                        <td className="  text-slate-200" style={{ textAlign: 'right', fontWeight: 600 }}>
                           {fmtDec(live)}
                         </td>
-                        <td className="price-mono text-cyan-400" style={{ textAlign: 'right', fontWeight: 700 }}>
+                        <td className="  text-cyan-400" style={{ textAlign: 'right', fontWeight: 700 }}>
                           {fmt(currentValue)}
                         </td>
                         <td style={{ textAlign: 'right' }}>
-                          <span className={isUp ? 'pnl-up' : 'pnl-down'}>
-                            {isUp ? '▲' : '▼'} {pnlPct.toFixed(1)}%
-                            <div style={{ fontSize: '10px', opacity: 0.9, fontFamily: 'JetBrains Mono, monospace', marginTop: '1px' }}>
-                              {isUp ? '+' : ''}{fmt(pnl)}
+                          <span className={isUp ? 'pnl-badge-up' : 'pnl-badge-down'}>
+                            {isUp ? '+' : ''}{fmt(pnl)}
+                            <div style={{ fontSize: '10px', opacity: 0.85, marginTop: '1px' }}>
+                              {isUp ? '▲' : '▼'} {pnlPct.toFixed(1)}%
                             </div>
                           </span>
                         </td>
@@ -191,19 +190,19 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
                     <div className="mobile-card-details">
                       <div className="detail-col">
                         <span className="detail-label">Qty</span>
-                        <span className="detail-val price-mono font-bold text-slate-200">{s.quantity}</span>
+                        <span className="detail-val   font-bold text-slate-200">{s.quantity}</span>
                       </div>
                       <div className="detail-col">
                         <span className="detail-label">Buy Avg</span>
-                        <span className="detail-val price-mono">{fmtDec(s.buy_price)}</span>
+                        <span className="detail-val  ">{fmtDec(s.buy_price)}</span>
                       </div>
                       <div className="detail-col">
                         <span className="detail-label">Live</span>
-                        <span className="detail-val price-mono font-bold text-slate-200">{fmtDec(live)}</span>
+                        <span className="detail-val   font-bold text-slate-200">{fmtDec(live)}</span>
                       </div>
                       <div className="detail-col" style={{ textAlign: 'right' }}>
                         <span className="detail-label">Current</span>
-                        <span className="detail-val price-mono text-cyan-400 font-bold">
+                        <span className="detail-val   text-cyan-400 font-bold">
                           {fmt(live * s.quantity)}
                         </span>
                       </div>
@@ -245,14 +244,15 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
       </div>
 
       {/* Embedded CSS for responsive reflow */}
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .desktop-table-wrap {
           display: block;
         }
         .mobile-cards-wrap {
           display: none;
         }
-        
+
         @media (max-width: 640px) {
           .desktop-table-wrap {
             display: none;
@@ -300,7 +300,6 @@ export const HoldingsList: React.FC<HoldingsListProps> = ({
           }
           .mobile-card-sub {
             font-size: 11px;
-            font-family: 'JetBrains Mono', monospace;
           }
           .mobile-card-details {
             display: grid;

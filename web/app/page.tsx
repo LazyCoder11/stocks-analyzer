@@ -9,6 +9,8 @@ import { TelegramWidget } from '@/components/TelegramWidget';
 import { HoldingsList } from '@/components/HoldingsList';
 import { StockModal } from '@/components/StockModal';
 import { ToastList } from '@/components/ToastList';
+import { PortfolioNews } from '@/components/PortfolioNews';
+import Footer from '@/components/Footer';
 
 interface Stock {
   id: string;
@@ -327,7 +329,7 @@ export default function DashboardPage() {
   const exchanges = Array.from(new Set(portfolio.map((s) => s.exchange))).join(' · ');
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <div style={{ minHeight: '100vh' }}>
       {/* Header component */}
       <Header
         user={user}
@@ -359,22 +361,26 @@ export default function DashboardPage() {
               onDelete={deleteStock}
               onAddTrigger={() => openModal()}
             />
+            <AllocationCharts portfolio={portfolio} />
           </div>
 
-          {/* Sidebar Right Side: Charts & Telegram Reporting */}
+          {/* Sidebar Right Side: News & Telegram Reporting */}
           <aside className="dashboard-side-col">
-            <AllocationCharts portfolio={portfolio} />
-            <TelegramWidget
+            <PortfolioNews />
+            {/* <TelegramWidget
               tgChatId={tgChatId}
               setTgChatId={setTgChatId}
               updatingTg={updatingTg}
               runningAnalysis={runningAnalysis}
               onSaveChatId={saveTgChatId}
               onTriggerAnalysis={triggerAnalysis}
-            />
+            /> */}
           </aside>
         </div>
+
       </main>
+
+      <Footer />
 
       {/* Stock Form Modal Bottom Sheet */}
       <StockModal

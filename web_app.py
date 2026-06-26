@@ -186,6 +186,104 @@ def lookup_symbol(symbol):
         return jsonify({"valid": False, "error": str(e)}), 400
 
 
+@app.route("/api/news")
+def get_stock_news():
+    """Fetch news for stock symbols."""
+    symbols_str = request.args.get("symbols", "")
+    if not symbols_str:
+        return jsonify([])
+
+    yf_symbols = [s.strip() for s in symbols_str.split(",") if s.strip()]
+    if not yf_symbols:
+        return jsonify([])
+
+    import yfinance as yf
+    from concurrent.futures import ThreadPoolExecutor
+
+    # Limit to maximum 5 symbols to avoid slow response / rate limits
+    yf_symbols = yf_symbols[:5]
+
+    def parse_article(raw_article, sym):
+        # Format adapter: handles both old flat and new nested structures
+        content = raw_article.get("content", {}) if "content" in raw_article else raw_article
+        
+        # Title
+        title = content.get("title") or raw_article.get("title") or ""
+        
+        # Link
+        link = ""
+        canonical = content.get("canonicalUrl", {})
+        if isinstance(canonical, dict):
+            link = canonical.get("url")
+        if not link:
+            clickthrough = content.get("clickThroughUrl", {})
+            if isinstance(clickthrough, dict):
+                link = clickthrough.get("url")
+        if not link:
+            link = content.get("link") or raw_article.get("link") or ""
+            
+        # Publisher
+        publisher = ""
+        provider = content.get("provider", {})
+        if isinstance(provider, dict):
+            publisher = provider.get("displayName")
+        if not publisher:
+            publisher = raw_article.get("publisher") or "Yahoo Finance"
+            
+        # Publish Time
+        pub_time = 0
+        pub_date_str = content.get("pubDate") or raw_article.get("pubDate")
+        if pub_date_str:
+            try:
+                from datetime import datetime
+                # Parse ISO date string (e.g. "2026-06-22T05:09:16Z")
+                # Remove Z and parse
+                dt = datetime.strptime(pub_date_str.replace("Z", ""), "%Y-%m-%dT%H:%M:%S")
+                pub_time = int(dt.timestamp())
+            except Exception:
+                pass
+        if not pub_time:
+            pub_time = content.get("providerPublishTime") or raw_article.get("providerPublishTime") or 0
+            
+        return {
+            "title": title,
+            "link": link,
+            "publisher": publisher,
+            "providerPublishTime": int(pub_time),
+            "yf_symbol": sym
+        }
+
+    def fetch_single(sym):
+        try:
+            ticker = yf.Ticker(sym)
+            news = ticker.news or []
+            parsed = [parse_article(art, sym) for art in news]
+            return parsed
+        except Exception:
+            return []
+
+    all_news = []
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        results = executor.map(fetch_single, yf_symbols)
+        for r in results:
+            all_news.extend(r)
+
+    # Sort all news by publish time descending
+    all_news.sort(key=lambda x: x.get("providerPublishTime", 0), reverse=True)
+
+    # De-duplicate by title or link
+    seen_links = set()
+    unique_news = []
+    for article in all_news:
+        link = article.get("link")
+        if link and link not in seen_links:
+            seen_links.add(link)
+            unique_news.append(article)
+
+    # Return top 15 articles
+    return jsonify(unique_news[:15])
+
+
 @app.route("/api/run-analysis", methods=["POST"])
 def run_analysis_now():
     """Trigger the analyzer manually from the UI."""

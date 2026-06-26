@@ -129,36 +129,29 @@ export const AllocationCharts: React.FC<AllocationChartsProps> = ({ portfolio })
   };
 
   return (
-    <div className="card accent-line-cyan">
+    <div className="card accent-line-cyan h-full">
       {/* Header with interactive Tab togglers */}
       <div className="card-header flex items-center justify-between">
         <div className="card-title flex items-center gap-1.5 text-slate-700">
-          {activeTab === 'sector' ? (
-            <PieChart size={14} className="text-sky-600" />
-          ) : (
-            <BarChart2 size={14} className="text-indigo-600" />
-          )}
           <span>Analytics</span>
         </div>
-        
+
         <div className="flex bg-slate-100 border border-slate-200 p-0.5 rounded-lg">
           <button
             onClick={() => setActiveTab('sector')}
-            className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md transition-all ${
-              activeTab === 'sector'
-                ? 'bg-white text-slate-800 shadow-sm border border-slate-200/50'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
+            className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md transition-all ${activeTab === 'sector'
+              ? 'bg-white text-slate-800 shadow-sm border border-slate-200/50'
+              : 'text-slate-500 hover:text-slate-800'
+              }`}
           >
             Sectors
           </button>
           <button
             onClick={() => setActiveTab('performance')}
-            className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md transition-all ${
-              activeTab === 'performance'
-                ? 'bg-white text-slate-800 shadow-sm border border-slate-200/50'
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
+            className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md transition-all ${activeTab === 'performance'
+              ? 'bg-white text-slate-800 shadow-sm border border-slate-200/50'
+              : 'text-slate-500 hover:text-slate-800'
+              }`}
           >
             Assets
           </button>
@@ -269,7 +262,7 @@ export const AllocationCharts: React.FC<AllocationChartsProps> = ({ portfolio })
                       ticks: {
                         color: '#64748b',
                         font: { family: 'Inter', size: 11 },
-                        callback: (v) => `₹${Number(v) >= 100000 ? (Number(v)/100000).toFixed(1) + 'L' : Number(v) >= 1000 ? (Number(v)/1000).toFixed(0) + 'k' : v}`,
+                        callback: (v) => `₹${Number(v) >= 100000 ? (Number(v) / 100000).toFixed(1) + 'L' : Number(v) >= 1000 ? (Number(v) / 1000).toFixed(0) + 'k' : v}`,
                       },
                     },
                   },

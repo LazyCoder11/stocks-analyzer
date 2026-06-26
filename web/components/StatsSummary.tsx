@@ -37,7 +37,6 @@ export const StatsSummary: React.FC<StatsSummaryProps> = ({
           {loading ? '—' : fmt(totalInvested)}
         </div>
         <div className="stat-sub">Principal capital cost</div>
-        <Wallet className="stat-icon text-slate-400" size={18} />
       </div>
 
       {/* Current Value */}
@@ -47,7 +46,6 @@ export const StatsSummary: React.FC<StatsSummaryProps> = ({
           {loading ? '—' : fmt(totalCurrent)}
         </div>
         <div className="stat-sub">Live market valuation</div>
-        <LineChart className="stat-icon text-cyan-400" size={18} />
       </div>
 
       {/* Net Return */}
@@ -59,7 +57,6 @@ export const StatsSummary: React.FC<StatsSummaryProps> = ({
         <div className={`stat-badge ${isUp ? 'up' : 'down'}`}>
           {loading ? '—' : `${isUp ? '▲' : '▼'} ${totalPnLPct.toFixed(2)}%`}
         </div>
-        <TrendingUp className={`stat-icon ${isUp ? 'text-emerald-400' : 'text-rose-400'}`} size={18} />
       </div>
 
       {/* Assets Count */}
@@ -71,7 +68,6 @@ export const StatsSummary: React.FC<StatsSummaryProps> = ({
         <div className="stat-sub">
           {loading ? '—' : assetsCount === 0 ? 'No active holdings' : `Listed on ${exchanges || 'Exchanges'}`}
         </div>
-        <Layers className="stat-icon text-indigo-400" size={18} />
       </div>
     </div>
   );
