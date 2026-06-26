@@ -69,6 +69,7 @@ class PriceFetcher:
         self._cache: dict[str, float] = {}       # { "RELIANCE.NS": 1316.50 }
         self._symbols: list[str] = []            # yf-style symbols
         self._last_refreshed: datetime | None = None
+        self._nse_disabled_until: float = 0.0    # circuit-breaker timestamp
         self._lock = threading.Lock()
         self._stop_event = threading.Event()
         self._thread: threading.Thread | None = None
@@ -82,8 +83,11 @@ class PriceFetcher:
         session.headers.update(NSE_HEADERS)
         try:
             # Visit homepage to set session cookies (NSE requires this)
-            session.get(NSE_HOME_URL, timeout=8)
-            logger.info("NSE session initialised (cookies set).")
+            resp = session.get(NSE_HOME_URL, timeout=8)
+            if resp.status_code != 200:
+                logger.warning(f"NSE homepage returned status {resp.status_code} — API is likely blocked.")
+            else:
+                logger.info("NSE session initialised (cookies set).")
         except Exception as e:
             logger.warning(f"NSE session warm-up failed: {e} — will retry on first fetch.")
         return session
@@ -111,16 +115,24 @@ class PriceFetcher:
         symbol must be bare NSE ticker, e.g. 'RELIANCE' (not 'RELIANCE.NS').
         Returns price float or None on failure.
         """
+        import time
+        if time.time() < self._nse_disabled_until:
+            return None
+
         url = NSE_QUOTE_URL.format(symbol=symbol.upper())
         try:
             resp = self._session.get(url, timeout=6)
             if resp.status_code in (401, 403):
-                logger.warning("NSE session expired — refreshing cookies.")
+                logger.warning("NSE session expired or blocked — refreshing cookies.")
                 self._refresh_session()
                 resp = self._session.get(url, timeout=6)
+                if resp.status_code in (401, 403):
+                    logger.warning("NSE API still blocked. Activating 10-minute circuit breaker.")
+                    self._nse_disabled_until = time.time() + 600
+                    return None
+
             if resp.status_code == 200:
                 data = resp.json()
-                # NSE API nests price in priceInfo → lastPrice
                 price = (
                     data.get("priceInfo", {}).get("lastPrice")
                     or data.get("priceInfo", {}).get("previousClose")
@@ -149,7 +161,8 @@ class PriceFetcher:
           • .BO  → yfinance only (BSE not supported by NSE equity API)
           • Other (indices, ETFs) → yfinance only
         """
-        if yf_symbol.endswith(".NS"):
+        import time
+        if yf_symbol.endswith(".NS") and time.time() > self._nse_disabled_until:
             bare = yf_symbol[:-3]
             price = self._fetch_nse(bare)
             if price is not None:
@@ -227,9 +240,6 @@ class PriceFetcher:
         """
         self._symbols = list(symbols)
         logger.info(f"PriceFetcher starting for {len(symbols)} symbols: {symbols}")
-
-        # Initial blocking fetch so cache is warm before first API request
-        self._refresh_all()
 
         # Start background thread (daemon so it dies with the process)
         self._thread = threading.Thread(target=self._run, daemon=True, name="PriceFetcher")
