@@ -60,9 +60,9 @@ export default function LoginPage() {
           {error && (
             <div
               style={{
-                background: 'var(--neon-red-dim)',
-                color: 'var(--neon-red)',
-                border: '1px solid rgba(255, 61, 90, 0.22)',
+                background: 'var(--accent-red-bg)',
+                color: 'var(--accent-red)',
+                border: '1px solid var(--accent-red-bd)',
                 padding: '10px 12px',
                 borderRadius: 'var(--r-md)',
                 fontSize: '12px',

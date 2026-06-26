@@ -74,9 +74,9 @@ export default function RegisterPage() {
           {error && (
             <div
               style={{
-                background: 'var(--neon-red-dim)',
-                color: 'var(--neon-red)',
-                border: '1px solid rgba(255, 61, 90, 0.22)',
+                background: 'var(--accent-red-bg)',
+                color: 'var(--accent-red)',
+                border: '1px solid var(--accent-red-bd)',
                 padding: '10px 12px',
                 borderRadius: 'var(--r-md)',
                 fontSize: '12px',
@@ -91,9 +91,9 @@ export default function RegisterPage() {
           {success && (
             <div
               style={{
-                background: 'rgba(0, 255, 135, 0.08)',
-                color: 'var(--neon-green)',
-                border: '1px solid rgba(0, 255, 135, 0.18)',
+                background: 'var(--accent-green-bg)',
+                color: 'var(--accent-green)',
+                border: '1px solid var(--accent-green-bd)',
                 padding: '10px 12px',
                 borderRadius: 'var(--r-md)',
                 fontSize: '12px',
