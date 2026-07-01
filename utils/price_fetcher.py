@@ -32,6 +32,40 @@ logger = logging.getLogger(__name__)
 
 IST = ZoneInfo("Asia/Kolkata")
 
+import json
+import os
+
+CACHE_FILE = "data/prices_cache.json"
+
+def _save_cache_to_file(cache: dict, last_refreshed: datetime | None):
+    try:
+        os.makedirs(os.path.dirname(CACHE_FILE), exist_ok=True)
+        data = {
+            "prices": cache,
+            "last_refreshed": last_refreshed.isoformat() if last_refreshed else None
+        }
+        with open(CACHE_FILE, "w") as f:
+            json.dump(data, f)
+    except Exception as e:
+        logger.error(f"Failed to write price cache file: {e}")
+
+def _load_cache_from_file() -> tuple[dict[str, float], datetime | None]:
+    if not os.path.exists(CACHE_FILE):
+        return {}, None
+    try:
+        with open(CACHE_FILE, "r") as f:
+            data = json.load(f)
+            prices = data.get("prices", {})
+            lr_str = data.get("last_refreshed")
+            try:
+                last_refreshed = datetime.fromisoformat(lr_str) if lr_str else None
+            except Exception:
+                last_refreshed = None
+            return prices, last_refreshed
+    except Exception as e:
+        logger.error(f"Failed to read price cache file: {e}")
+        return {}, None
+
 MARKET_OPEN  = dtime(9, 15)   # NSE opens 9:15 AM IST
 MARKET_CLOSE = dtime(15, 31)  # NSE closes 3:30 PM IST (buffer +1 min)
 
@@ -79,9 +113,10 @@ class PriceFetcher:
     """
 
     def __init__(self):
-        self._cache: dict[str, float] = {}       # { "RELIANCE.NS": 1316.50 }
+        prices, lr = _load_cache_from_file()
+        self._cache: dict[str, float] = prices   # { "RELIANCE.NS": 1316.50 }
         self._symbols: list[str] = []            # yf-style symbols
-        self._last_refreshed: datetime | None = None
+        self._last_refreshed: datetime | None = lr
         self._nse_disabled_until: float = 0.0    # circuit-breaker timestamp
         self._lock = threading.Lock()
         self._stop_event = threading.Event()
@@ -306,6 +341,7 @@ class PriceFetcher:
         with self._lock:
             self._cache.update(new_prices)
             self._last_refreshed = datetime.now(IST)
+            _save_cache_to_file(self._cache, self._last_refreshed)
 
         logger.info(
             f"Price cache refreshed: {len(new_prices)} symbols | "
@@ -364,6 +400,11 @@ class PriceFetcher:
         Return cached price for a symbol.
         Falls back to a live fetch if symbol is not in cache yet.
         """
+        # Read from file cache first
+        prices, _ = _load_cache_from_file()
+        if yf_symbol in prices:
+            return prices[yf_symbol]
+
         with self._lock:
             if yf_symbol in self._cache:
                 return self._cache[yf_symbol]
@@ -374,15 +415,22 @@ class PriceFetcher:
         if price is not None:
             with self._lock:
                 self._cache[yf_symbol] = price
+                _save_cache_to_file(self._cache, self._last_refreshed)
         return price
 
     def get_all_prices(self) -> dict[str, float]:
         """Return a snapshot of the full price cache."""
+        prices, _ = _load_cache_from_file()
+        if prices:
+            return prices
         with self._lock:
             return dict(self._cache)
 
     def get_last_refreshed(self) -> datetime | None:
         """Return the timestamp of the last successful cache refresh."""
+        _, lr = _load_cache_from_file()
+        if lr:
+            return lr
         return self._last_refreshed
 
 
