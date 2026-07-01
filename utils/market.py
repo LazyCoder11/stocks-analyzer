@@ -77,7 +77,9 @@ def get_technical_data(yf_symbol: str, live_price: float | None = None) -> dict:
     volume analysis, and available fundamental data.
     """
     try:
-        ticker = yf.Ticker(yf_symbol)
+        from utils.price_fetcher import get_proxied_session
+        session = get_proxied_session()
+        ticker = yf.Ticker(yf_symbol, session=session)
         hist   = ticker.history(period="1y", interval="1d")
 
         if hist.empty:

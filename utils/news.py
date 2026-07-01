@@ -18,8 +18,10 @@ def fetch_yahoo_news(symbol: str, yf_symbol: str = None) -> list:
     import yfinance as yf
     articles = []
     try:
+        from utils.price_fetcher import get_proxied_session
+        session = get_proxied_session()
         ticker_sym = yf_symbol or f"{symbol}.NS"
-        ticker = yf.Ticker(ticker_sym)
+        ticker = yf.Ticker(ticker_sym, session=session)
         news = ticker.news or []
         for item in news[:MAX_NEWS_PER_STOCK]:
             articles.append({

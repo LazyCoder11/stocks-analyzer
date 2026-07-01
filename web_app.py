@@ -216,7 +216,9 @@ def lookup_symbol(symbol):
     sector = "Other"
 
     try:
-        ticker = yf.Ticker(yf_sym)
+        from utils.price_fetcher import get_proxied_session
+        session = get_proxied_session()
+        ticker = yf.Ticker(yf_sym, session=session)
         try:
             info   = ticker.info or {}
             name   = info.get("longName") or info.get("shortName") or name
